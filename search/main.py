@@ -27,6 +27,50 @@ def generate_board_dict(uppers,lowers,blocks):
         board_dict[(block.x,block.y)] = "block"
     return board_dict
 
+def slide(currentToken, board_dict):
+    for i in range(-1,2):
+        if(i==0):
+            continue
+        elif(board_dict[(currentToken.x + i,currentToken.y)] == "block"):
+            continue
+        elif(board_dict[(currentToken.x + i,currentToken.y)] == None or 'l'):
+            board_dict[currentToken].x = currentToken.x + i
+            print(board_dict[currentToken])
+            return board_dict
+    for i in range(-1,2):
+        if(i==0):
+            continue
+        elif(board_dict[(currentToken.x,currentToken.y+i)] == "block"):
+            continue
+        elif(board_dict[(currentToken.x,currentToken.y+i)] == None or 'l'):
+            board_dict[currentToken].y = currentToken.y + i
+            print(board_dict[currentToken])
+            return board_dict
+    for i in range(-1,2):
+        if(i==0):
+            continue
+        elif(board_dict[(currentToken.x-i,currentToken.y+i)] == "block"):
+            continue
+        elif(board_dict[(currentToken.x-i,currentToken.y+i)] == None or 'l'):
+            board_dict[currentToken].y = currentToken.y + i
+            board_dict[currentToken].x = currentToken.x - i
+            print(board_dict[currentToken])
+            return board_dict
+            
+    
+            
+
+
+    
+    """for token in dict:
+        if(currentToken = token):
+            continue
+        else if(dict[token].x + dict[token].y + currentToken.x + currentToken.y is in [-1,0,1]):
+            if(dict[token].type != 'block'):
+                dict[currentToken] = token
+                return"""
+
+
 def main():
     try:
         with open(sys.argv[1]) as file:
@@ -58,4 +102,6 @@ def main():
         blockTokens.append(block)
 
     # Print board to show off function
-    print_board(generate_board_dict(upperTokens,lowerTokens,blockTokens))
+    board = generate_board_dict(upperTokens,lowerTokens,blockTokens)
+    print_board(board)
+    print(board)
