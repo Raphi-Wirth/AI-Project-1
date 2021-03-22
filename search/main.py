@@ -27,35 +27,36 @@ def generate_board_dict(uppers,lowers,blocks):
         board_dict[(block.x,block.y)] = "block"
     return board_dict
 
-def slide(currentToken, board_dict):
+def slide(current, uppers, lowers, blocks):
     for i in range(-1,2):
-        if(i==0):
+        if (i==0):
             continue
-        elif(board_dict[(currentToken.x + i,currentToken.y)] == "block"):
-            continue
-        elif(board_dict[(currentToken.x + i,currentToken.y)] == None or 'l'):
-            board_dict[currentToken].x = currentToken.x + i
-            print(board_dict[currentToken])
-            return board_dict
+        for token in blocks:
+            if ((uppers[current].x + i, uppers[current].y) == (token.x,token.y)):
+                continue
+            else:
+                uppers[current].x = uppers[current].x + i
+                return
     for i in range(-1,2):
-        if(i==0):
+        if (i==0):
             continue
-        elif(board_dict[(currentToken.x,currentToken.y+i)] == "block"):
-            continue
-        elif(board_dict[(currentToken.x,currentToken.y+i)] == None or 'l'):
-            board_dict[currentToken].y = currentToken.y + i
-            print(board_dict[currentToken])
-            return board_dict
+        for token in blocks:
+            if ((uppers[current].x, uppers[current].y + i) == (token.x,token.y)):
+                continue
+            else:
+                uppers[current].y = uppers[current].y + i
+                return
     for i in range(-1,2):
-        if(i==0):
+        if (i==0):
             continue
-        elif(board_dict[(currentToken.x-i,currentToken.y+i)] == "block"):
-            continue
-        elif(board_dict[(currentToken.x-i,currentToken.y+i)] == None or 'l'):
-            board_dict[currentToken].y = currentToken.y + i
-            board_dict[currentToken].x = currentToken.x - i
-            print(board_dict[currentToken])
-            return board_dict
+        for token in blocks:
+            if ((uppers[current].x - i, uppers[current].y + i) == (token.x,token.y)):
+                continue
+            else:
+                uppers[current].x = uppers[current].x - i
+                uppers[current].y = uppers[current].y + i
+                return
+    
             
     
             
@@ -104,4 +105,6 @@ def main():
     # Print board to show off function
     board = generate_board_dict(upperTokens,lowerTokens,blockTokens)
     print_board(board)
-    print(board)
+    slide(0,upperTokens,lowerTokens,blockTokens)
+    board = generate_board_dict(upperTokens,lowerTokens,blockTokens)
+    print_board(board)
