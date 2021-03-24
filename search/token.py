@@ -19,6 +19,9 @@ class Token:
         self.x = x
         self.y = y
 
+    def isTargetted(self, value):
+        self.targetted = value
+
     def __str__(self):
         return f'Token is at ({self.x},{self.y}) and is of type "{self.type}"'
     

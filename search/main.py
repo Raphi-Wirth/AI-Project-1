@@ -16,6 +16,8 @@ import math
 from search.util import print_board, print_slide, print_swing
 from search.token import Token
 
+MAX_X = 4
+
 # Generates a board dictionary in the format of the board printing
 # function
 def generate_board_dict(uppers,lowers,blocks):
@@ -29,7 +31,79 @@ def generate_board_dict(uppers,lowers,blocks):
     return board_dict
 
 def calcDistance(xOne,xTwo,yOne,yTwo):
-    return (xTwo-xOne + yTwo-yOne)
+    return (abs(xTwo-xOne) + abs(yTwo-yOne))
+
+def calcClosestTarget(token, lowers):
+    minimum = 9999
+    distance = 0
+    for lowerToken in lowers:
+        if (token.type == 's'):
+            if (lowerToken.type == 'p'):
+                distance = calcDistance(lowerToken.x,token.x,lowerToken.y,token.y)
+        if (token.type == 'p'):
+            if (lowerToken.type == 'r'):
+                distance = calcDistance(lowerToken.x,token.x,lowerToken.y,token.y)
+        if (token.type == 'r'):
+            if (lowerToken.type == 's'):
+                distance = calcDistance(lowerToken.x,token.x,lowerToken.y,token.y)
+        if(distance<minimum):
+            minimum = distance
+    print(distance)
+    return distance
+        
+            
+
+
+def calcState(current, uppers, lowers, blocks):
+    positions = []
+    for i in range(-1,2):
+        blocked = False
+        if (i==0):
+            continue
+        if(abs(uppers[current].x+i) > MAX_X):
+            continue
+        for token in blocks:
+            if ((uppers[current].x + i, uppers[current].y) == (token.x,token.y)):
+                blocked = True
+                break
+        if(blocked == False):
+            positions.append((uppers[current].x+i,uppers[current].y))
+                
+
+    for i in range(-1,2):
+        blocked = False
+        if(abs(uppers[current].y+i) > MAX_X):
+            continue
+        if (i==0):
+            continue
+        for token in blocks:
+            if ((uppers[current].x, uppers[current].y + i) == (token.x,token.y)):
+                blocked = False
+                break
+        if(blocked == False):
+            positions.append((uppers[current].x,uppers[current].y+i))
+
+    for i in range(-1,2):
+        blocked = False
+        if((abs(uppers[current].x-i) > MAX_X) or (abs(uppers[current].y + i)>MAX_X)):
+            continue
+        if (i==0):
+            continue
+        for token in blocks:
+            if ((uppers[current].x - i, uppers[current].y + i) == (token.x,token.y)):
+                blocked = False
+        if(blocked == False):
+            positions.append((uppers[current].x-i,uppers[current].y+i))
+    print(positions)
+        
+    
+
+
+
+
+
+                
+
 
 def fight(uppers, lowers):
     for first in uppers:
@@ -66,45 +140,6 @@ def fight(uppers, lowers):
                         lowers.pop(third)
 
                 
-    
-    
-    """for i in range(-1,2):
-        if (i==0):
-            continue
-        for token in blocks:
-            if ((uppers[current].x + i, uppers[current].y) == (token.x,token.y)):
-                continue
-            else:
-                heuristics.append(calcDistance(uppers[current].x+i,uppers[current].y,target.x,target.y))
-                
-
-    for i in range(-1,2):
-        if (i==0):
-            continue
-        for token in blocks:
-            if ((uppers[current].x, uppers[current].y + i) == (token.x,token.y)):
-                continue
-            else:
-                uppers[current].y = uppers[current].y + i
-                return
-
-
-    for i in range(-1,2):
-        if (i==0):
-            continue
-        for token in blocks:
-            if ((uppers[current].x - i, uppers[current].y + i) == (token.x,token.y)):
-                continue
-            else:
-                uppers[current].x = uppers[current].x - i
-                uppers[current].y = uppers[current].y + i
-                return"""
-
-
-    
-            
-    
-            
 
 
     
@@ -147,12 +182,11 @@ def main():
         block = Token(blockRaw[1], blockRaw[2], "b")
         blockTokens.append(block)
 
+
     # Print board to show off function
     board = generate_board_dict(upperTokens,lowerTokens,blockTokens)
     print_board(board)
-    fight(upperTokens,lowerTokens)
-    #playGame()
+    print(upperTokens[0].type)
+    calcClosestTarget(upperTokens[1],lowerTokens)
     for i in range(len(upperTokens)):
-        #slide(i,upperTokens,lowerTokens,blockTokens)
-        board = generate_board_dict(upperTokens,lowerTokens,blockTokens)
-        print_board(board)
+        calcState(i,upperTokens,lowerTokens,blockTokens)
