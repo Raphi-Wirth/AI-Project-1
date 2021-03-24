@@ -4,6 +4,7 @@ class Token:
         self.y = y
         self.isAlive = True
         self.type = type
+        self.targetted = False
 
     def placement(self):
         return (self.x,self.y)

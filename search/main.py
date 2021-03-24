@@ -8,6 +8,7 @@ This script contains the entry point to the program (the code in
 
 import sys
 import json
+import math
 
 # If you want to separate your code into separate files, put them
 # inside the `search` directory (like this one and `util.py`) and
@@ -27,16 +28,56 @@ def generate_board_dict(uppers,lowers,blocks):
         board_dict[(block.x,block.y)] = "block"
     return board_dict
 
-def slide(current, uppers, lowers, blocks):
-    for i in range(-1,2):
+def calcDistance(xOne,xTwo,yOne,yTwo):
+    return (xTwo-xOne + yTwo-yOne)
+
+def fight(uppers, lowers):
+    for first in uppers:
+        i=0
+        for second in range(len(lowers)):
+            if (uppers[first].x,uppers[first].y) == (lowers[second].x,lowers[second].y):
+                if (uppers[first].type == 'r'):
+                    if(lowers[second].type == 's'):
+                        lowers[second].kill()
+                        lowers.pop(i)
+                elif (uppers[first].type == 's'):
+                    if(lowers[second].type == 'p'):
+                        lowers[second].kill()
+                        lowers.pop(i)
+                elif (uppers[first].type == 'p'):
+                    if(lowers[second].type == 'r'):
+                        lowers[second].kill()
+                        lowers.pop(second)
+        for third in range(len(uppers)):
+            if(first==third):
+                continue
+            if (uppers[first].x,uppers[first].y) == (uppers[third].x,uppers[third].y):
+                if (uppers[first].type == 'r'):
+                    if(uppers[third].type == 's'):
+                        uppers[third].kill()
+                        lowers.pop(i)
+                elif (uppers[first].type == 's'):
+                    if(uppers[third].type == 'p'):
+                        uppers[third].kill()
+                        lowers.pop(i)
+                elif (uppers[first].type == 'p'):
+                    if(uppers[third].type == 'r'):
+                        uppers[third].kill()
+                        lowers.pop(third)
+
+                
+    
+    
+    """for i in range(-1,2):
         if (i==0):
             continue
         for token in blocks:
             if ((uppers[current].x + i, uppers[current].y) == (token.x,token.y)):
                 continue
             else:
-                uppers[current].x = uppers[current].x + i
-                return
+                heuristics.append(calcDistance(uppers[current].x+i,uppers[current].y,target.x,target.y))
+                
+
     for i in range(-1,2):
         if (i==0):
             continue
@@ -46,6 +87,8 @@ def slide(current, uppers, lowers, blocks):
             else:
                 uppers[current].y = uppers[current].y + i
                 return
+
+
     for i in range(-1,2):
         if (i==0):
             continue
@@ -55,7 +98,9 @@ def slide(current, uppers, lowers, blocks):
             else:
                 uppers[current].x = uppers[current].x - i
                 uppers[current].y = uppers[current].y + i
-                return
+                return"""
+
+
     
             
     
@@ -105,6 +150,9 @@ def main():
     # Print board to show off function
     board = generate_board_dict(upperTokens,lowerTokens,blockTokens)
     print_board(board)
-    slide(0,upperTokens,lowerTokens,blockTokens)
-    board = generate_board_dict(upperTokens,lowerTokens,blockTokens)
-    print_board(board)
+    fight(upperTokens,lowerTokens)
+    #playGame()
+    for i in range(len(upperTokens)):
+        #slide(i,upperTokens,lowerTokens,blockTokens)
+        board = generate_board_dict(upperTokens,lowerTokens,blockTokens)
+        print_board(board)
