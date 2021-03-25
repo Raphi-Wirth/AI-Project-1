@@ -95,6 +95,12 @@ def calcStates(token, uppers, lowers, blocks):
             positions.append((token.x-i,token.y+i))
     return positions
         
+def isIntersecting(currentTokenPath, allPaths):
+    for i in range(len(currentTokenPath)):
+        for path in allPaths:
+            if (currentTokenPath[i]==path[i]):
+                return True
+    return False
 
 def fight(uppers, lowers):
     for first in uppers:
