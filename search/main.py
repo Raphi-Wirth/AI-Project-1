@@ -15,7 +15,9 @@ import math
 # then import from them like this:
 from search.util import print_board, print_slide, print_swing
 from search.token import Token
+from search.cell import Cell
 
+# Max x value for the grid
 MAX_X = 4
 
 # Generates a board dictionary in the format of the board printing
@@ -30,80 +32,69 @@ def generate_board_dict(uppers,lowers,blocks):
         board_dict[(block.x,block.y)] = "block"
     return board_dict
 
-def calcDistance(xOne,xTwo,yOne,yTwo):
-    return (abs(xTwo-xOne) + abs(yTwo-yOne))
+# Calculate the manhattan distance between two points
+def calcDistance(p1,p2):
+    return (abs(p2[0]-p1[0]) + abs(p2[1]-p1[1]))
 
+# Calculates distance to the closest target for a token
 def calcClosestTarget(token, lowers):
     minimum = 9999
     distance = 0
     for lowerToken in lowers:
         if (token.type == 's'):
             if (lowerToken.type == 'p'):
-                distance = calcDistance(lowerToken.x,token.x,lowerToken.y,token.y)
+                distance = calcDistance((token.x,token.y),(lowerToken.x,lowerToken.y))
         if (token.type == 'p'):
             if (lowerToken.type == 'r'):
-                distance = calcDistance(lowerToken.x,token.x,lowerToken.y,token.y)
+                distance = calcDistance((token.x,token.y),(lowerToken.x,lowerToken.y))
         if (token.type == 'r'):
             if (lowerToken.type == 's'):
-                distance = calcDistance(lowerToken.x,token.x,lowerToken.y,token.y)
+                distance = calcDistance((token.x,token.y),(lowerToken.x,lowerToken.y))
         if(distance<minimum):
             minimum = distance
-    print(distance)
     return distance
         
-            
-
-
-def calcState(current, uppers, lowers, blocks):
+# Calculates all possible movements of a cell and returns a list of new positions
+def calcStates(token, uppers, lowers, blocks):
     positions = []
     for i in range(-1,2):
         blocked = False
         if (i==0):
             continue
-        if(abs(uppers[current].x+i) > MAX_X):
+        if(abs(token.x+i) > MAX_X):
             continue
-        for token in blocks:
-            if ((uppers[current].x + i, uppers[current].y) == (token.x,token.y)):
+        for block in blocks:
+            if ((token.x + i, token.y) == (block.x,block.y)):
                 blocked = True
                 break
         if(blocked == False):
-            positions.append((uppers[current].x+i,uppers[current].y))
-                
-
+            positions.append((token.x+i,token.y))   
     for i in range(-1,2):
         blocked = False
-        if(abs(uppers[current].y+i) > MAX_X):
+        if(abs(token.y+i) > MAX_X):
             continue
         if (i==0):
             continue
-        for token in blocks:
-            if ((uppers[current].x, uppers[current].y + i) == (token.x,token.y)):
-                blocked = False
+        for block in blocks:
+            if ((token.x, token.y + i) == (block.x,block.y)):
+                blocked = True
                 break
         if(blocked == False):
-            positions.append((uppers[current].x,uppers[current].y+i))
-
+            positions.append((token.x,token.y+i))
     for i in range(-1,2):
         blocked = False
-        if((abs(uppers[current].x-i) > MAX_X) or (abs(uppers[current].y + i)>MAX_X)):
+        if((abs(token.x-i) > MAX_X) or (abs(token.y + i)>MAX_X)):
             continue
         if (i==0):
             continue
-        for token in blocks:
-            if ((uppers[current].x - i, uppers[current].y + i) == (token.x,token.y)):
-                blocked = False
+        for block in blocks:
+            if ((token.x - i, token.y + i) == (block.x,block.y)):
+                blocked = True
+                break
         if(blocked == False):
-            positions.append((uppers[current].x-i,uppers[current].y+i))
-    print(positions)
+            positions.append((token.x-i,token.y+i))
+    return positions
         
-    
-
-
-
-
-
-                
-
 
 def fight(uppers, lowers):
     for first in uppers:
@@ -139,19 +130,73 @@ def fight(uppers, lowers):
                         uppers[third].kill()
                         lowers.pop(third)
 
-                
+# Uses the A* pathfinding algorithm to find the shortest path
+# and returns that path as an array
+def findPath(token, uppers, lowers, blocks):
+    # Keep track of open and closed cells
+    # Open = search the cell for children
+    # Closed = don't search that cell anymore
+    openList = []
+    closedList = []
 
+    # Make cell for the first position
+    start = Cell((token.x,token.y),None)
+    openList.append(start)
 
-    
-    """for token in dict:
-        if(currentToken = token):
-            continue
-        else if(dict[token].x + dict[token].y + currentToken.x + currentToken.y is in [-1,0,1]):
-            if(dict[token].type != 'block'):
-                dict[currentToken] = token
-                return"""
+    while len(openList) > 0:
+        current = openList[0]
+        
+        # Remove from open and add to closed
+        openList.pop(0)
+        closedList.append(current)
 
+        # If closest target has position 0 then path has been found
+        closestDistance = calcClosestTarget(Token(current.pos[0],current.pos[1],token.type),lowers)
+        if closestDistance == 0:
+            # Iterate through parent nodes and add to list
+            path = []
+            while current != None:
+                path.append(current.pos)
+                current = current.parent
+            print("Path found!")
+            return path[::-1]
+        
+        # Get children 
+        childrenPositions = calcStates(Token(current.pos[0],current.pos[1],token.type),uppers,lowers,blocks)
+        children = []
+        for pos in childrenPositions:
+            children.append(Cell(pos, current))
+        
+        for child in children:
+            # If child position is in closed positions, continue
+            cont = False
+            for closed in closedList:
+                if child.pos == closed.pos:
+                    cont = True
+            if cont:
+                continue
+            
+            # Calculate path costs and heuristics for cell
+            child.pathCost = current.pathCost + 1
+            child.totalCost = child.pathCost + closestDistance
 
+            # If this pathcost is more expensive than the same positions prev pathcost
+            # then continue
+            for op in openList:
+                if op.pos == child.pos and child.pathCost > op.pathCost:
+                    cont=True
+            if cont:
+                continue
+            
+            # Add child to list and sort the list
+            openList.append(child)
+        
+        # Sort the open cells list by total cost
+        sorted(openList, key=lambda op: op.totalCost)
+    print("Couldn't find path")
+    return []
+
+# Entrypoint
 def main():
     try:
         with open(sys.argv[1]) as file:
@@ -159,13 +204,6 @@ def main():
     except IndexError:
         print("usage: python3 -m search path/to/input.json", file=sys.stderr)
         sys.exit(1)
-
-    # TODO:
-    # Find and print a solution to the board configuration described
-    # by `data`.
-    # Why not start by trying to print this configuration out using the
-    # `print_board` helper function? (See the `util.py` source code for
-    # usage information).
     
     # Load in upper, lower and block tokens as seperate arrays (There
     # may be a more compact way to do this)
@@ -182,11 +220,9 @@ def main():
         block = Token(blockRaw[1], blockRaw[2], "b")
         blockTokens.append(block)
 
-
-    # Print board to show off function
-    board = generate_board_dict(upperTokens,lowerTokens,blockTokens)
-    print_board(board)
-    print(upperTokens[0].type)
-    calcClosestTarget(upperTokens[1],lowerTokens)
-    for i in range(len(upperTokens)):
-        calcState(i,upperTokens,lowerTokens,blockTokens)
+    # find a path for each upper token
+    paths = []
+    for token in upperTokens:
+        paths.append(findPath(token, upperTokens, lowerTokens, blockTokens))
+    for path in paths:
+        print(path)
