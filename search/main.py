@@ -41,19 +41,13 @@ def calcClosestTarget(token, lowers):
     minimum = 9999
     distance = 0
     for lowerToken in lowers:
-        if (token.type == 's'):
-            if (lowerToken.type == 'p'):
-                distance = calcDistance((token.x,token.y),(lowerToken.x,lowerToken.y))
-        if (token.type == 'p'):
-            if (lowerToken.type == 'r'):
-                distance = calcDistance((token.x,token.y),(lowerToken.x,lowerToken.y))
-        if (token.type == 'r'):
-            if (lowerToken.type == 's'):
-                distance = calcDistance((token.x,token.y),(lowerToken.x,lowerToken.y))
+        if(whoWins(token.type, lowerToken.type)==1):
+            distance = calcDistance((token.x,token.y),(lowerToken.x,lowerToken.y))
         if(distance<minimum):
             minimum = distance
     return distance
-        
+
+# Takes two token types, and returns the winner
 def whoWins(type1, type2):
     if type1 == 'r':
         if type2 == 's':
@@ -186,7 +180,8 @@ def calcStates(token, uppers, lowers, blocks, isSwing):
             positions.append((token.x,token.y+i)) 
         positions = list(dict.fromkeys(positions))
     return positions
-        
+
+# Checks if a certain path will intersect with another path on a specific turn
 def isIntersecting(currentTokenPath, allPaths):
     for i in range(len(currentTokenPath)):
         for path in allPaths:
