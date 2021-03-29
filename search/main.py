@@ -41,24 +41,38 @@ def calcClosestTarget(token, lowers):
     minimum = 9999
     distance = 0
     for lowerToken in lowers:
-        if (token.type == 's'):
-            if (lowerToken.type == 'p'):
-                distance = calcDistance((token.x,token.y),(lowerToken.x,lowerToken.y))
-        if (token.type == 'p'):
-            if (lowerToken.type == 'r'):
-                distance = calcDistance((token.x,token.y),(lowerToken.x,lowerToken.y))
-        if (token.type == 'r'):
-            if (lowerToken.type == 's'):
-                distance = calcDistance((token.x,token.y),(lowerToken.x,lowerToken.y))
+        if(whoWins(token.type, lowerToken.type)==1):
+            distance = calcDistance((token.x,token.y),(lowerToken.x,lowerToken.y))
         if(distance<minimum):
             minimum = distance
     return distance
-        
+
+# Takes two token types, and returns the winner
+def whoWins(type1, type2):
+    if type1 == 'r':
+        if type2 == 's':
+            return 1
+        if type2 == 'p':
+            return -1
+    if type1 == 's':
+        if type2 == 'p':
+            return 1
+        if type2 == 'r':
+            return -1
+    if type1 == 'p':
+        if type2 == 'r':
+            return 1
+        if type2 == 's':
+            return -1
+    return 0
+
 # Calculates all possible movements of a cell and returns a list of new positions
-def calcStates(token, uppers, lowers, blocks):
+def calcStates(token, uppers, lowers, blocks, isSwing):
     positions = []
     for i in range(-1,2):
         blocked = False
+        swing = False
+        defeat = 0
         if (i==0):
             continue
         if(abs(token.x+i) > MAX_X):
@@ -67,10 +81,33 @@ def calcStates(token, uppers, lowers, blocks):
             if ((token.x + i, token.y) == (block.x,block.y)):
                 blocked = True
                 break
-        if(blocked == False):
-            positions.append((token.x+i,token.y))   
+        for lowToken in lowers:
+            if ((token.x + i, token.y) == (lowToken.x,lowToken.y)):
+                if (whoWins(token.type,lowToken.type) == -1):
+                    defeat = 1
+                    break
+        if(isSwing == 0):
+            for swingToken in uppers:
+                if (token.x + i == swingToken.x) and (token.y == swingToken.y):
+                    swing = True
+                    savedSwing = swingToken
+                    break
+        if(defeat == 1):
+            continue
+        if(blocked == True):
+            continue  
+        if(swing == True):
+            print('we in here?')
+            for element in calcStates(savedSwing,uppers,lowers,blocks,1):
+                if(element == (token.x,token.y)):
+                    continue
+                positions.append(element)
+        else:
+            positions.append((token.x+i,token.y)) 
     for i in range(-1,2):
         blocked = False
+        swing = False
+        defeat = 0
         if(abs(token.y+i) > MAX_X):
             continue
         if (i==0):
@@ -79,10 +116,35 @@ def calcStates(token, uppers, lowers, blocks):
             if ((token.x, token.y + i) == (block.x,block.y)):
                 blocked = True
                 break
-        if(blocked == False):
-            positions.append((token.x,token.y+i))
+        for lowToken in lowers:
+            if ((token.x, token.y+i) == (lowToken.x,lowToken.y)):
+                if (whoWins(token.type,lowToken.type) == -1):
+                    defeat = 1
+                    break
+        if(isSwing == 0):
+            for swingToken in uppers:
+                if((swingToken.x,swingToken.y) == (token.x,token.y)):
+                    continue
+                if ((token.x,token.y+i) == (swingToken.x,swingToken.y)):
+                    swing = True
+                    savedSwing = swingToken
+                    break
+        if(defeat == 1):
+            continue
+        if(blocked == True):
+            continue  
+        if(swing == True):
+            print('we in here?')
+            for element in calcStates(savedSwing,uppers,lowers,blocks,1):
+                if(element == (token.x,token.y)):
+                    continue
+                positions.append(element)
+        else:
+            positions.append((token.x,token.y+i)) 
     for i in range(-1,2):
         blocked = False
+        swing = False
+        defeat = 0
         if((abs(token.x-i) > MAX_X) or (abs(token.y + i)>MAX_X)):
             continue
         if (i==0):
@@ -91,10 +153,35 @@ def calcStates(token, uppers, lowers, blocks):
             if ((token.x - i, token.y + i) == (block.x,block.y)):
                 blocked = True
                 break
-        if(blocked == False):
-            positions.append((token.x-i,token.y+i))
+        for lowToken in lowers:
+            if ((token.x-i, token.y+i) == (lowToken.x,lowToken.y)):
+                if (whoWins(token.type,lowToken.type) == -1):
+                    defeat = 1
+                    break
+        if(isSwing == 0):
+            for swingToken in uppers:
+                if((swingToken.x,swingToken.y) == (token.x,token.y)):
+                    continue
+                if ((token.x-i,token.y+i) == (swingToken.x,swingToken.y)):
+                    swing = True
+                    savedSwing = swingToken
+                    break
+        if(defeat == 1):
+            continue
+        if(blocked == True):
+            continue  
+        if(swing == True):
+            print('we in here?')
+            for element in calcStates(savedSwing,uppers,lowers,blocks,1):
+                if(element == (token.x,token.y)):
+                    continue
+                positions.append(element)
+        else:
+            positions.append((token.x,token.y+i)) 
+        positions = list(dict.fromkeys(positions))
     return positions
-        
+
+# Checks if a certain path will intersect with another path on a specific turn
 def isIntersecting(currentTokenPath, allPaths):
     for i in range(len(currentTokenPath)):
         for path in allPaths:
@@ -168,7 +255,7 @@ def findPath(token, uppers, lowers, blocks):
             return path[::-1]
         
         # Get children 
-        childrenPositions = calcStates(Token(current.pos[0],current.pos[1],token.type),uppers,lowers,blocks)
+        childrenPositions = calcStates(Token(current.pos[0],current.pos[1],token.type),uppers,lowers,blocks,0)
         children = []
         for pos in childrenPositions:
             children.append(Cell(pos, current))
