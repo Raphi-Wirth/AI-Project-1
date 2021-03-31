@@ -3,16 +3,13 @@ COMP30024 Artificial Intelligence, Semester 1, 2021
 Project Part A: Searching
 
 This script contains the entry point to the program (the code in
-`__main__.py` calls `main()`). Your solution starts here!
+`__main__.py` calls `main()`).
 """
 
 import sys
 import json
 import math
 
-# If you want to separate your code into separate files, put them
-# inside the `search` directory (like this one and `util.py`) and
-# then import from them like this:
 from search.util import print_board, print_slide, print_swing
 from search.token import Token
 from search.cell import Cell
@@ -75,27 +72,50 @@ def calcStates(token, uppers, lowers, blocks, isSwing):
         blocked = False
         swing = False
         defeat = 0
+        
+        # Don't generate a state that is off the board
         if abs(token.x+i[0]) > MAX_X or abs(token.y+i[1]) > MAX_X:
             continue
+
+        # Don't generate a state where a block token is
         for block in blocks:
             if ((token.x + i[0], token.y + i[1]) == (block.x,block.y)):
                 blocked = True
                 break
+        
+        # Don't generate a state where an opposing lower token is
         for lowToken in lowers:
             if ((token.x + i[0], token.y + i[1]) == (lowToken.x,lowToken.y)):
                 if (whoWins(token.type,lowToken.type) == -1):
                     defeat = 1
                     break
+        
+        # Don't move into a position an opposing upper token is moving to
+        for upper in uppers:
+            if (upper.x,upper.y) == (token.x,token.y):
+                continue
+            if((token.x + i[0], token.y + i[1]) == upper.nextPosition):
+                if (whoWins(token.type,upper.type) == -1 or whoWins(token.type,upper.type) == 1):
+                    defeat = 1
+                    break
+        
+        # Generate swing states if not already swinging
         if(isSwing == 0):
             for swingToken in uppers:
                 if (token.x + i[0], token.y + i[1]) == (swingToken.x, swingToken.y):
                     swing = True
                     savedSwing = swingToken
                     break
+        
+        # Don't generate a state where the token may be defeated
         if(defeat == 1):
             continue
+
+        # Don't generate a state where a block token is
         if(blocked == True):
             continue  
+
+        # Generate swing states here
         if(swing == True):
             for element in calcStates(savedSwing,uppers,lowers,blocks,1):
                 if((element[0],element[1]) == (token.x,token.y)):
@@ -103,50 +123,15 @@ def calcStates(token, uppers, lowers, blocks, isSwing):
                 states.append((element[0],element[1],"SWING"))
         else:
             states.append((token.x+i[0],token.y+i[1],"SLIDE"))  
-    states = list(dict.fromkeys(states))
-    return states
-
-# Checks if a certain path will intersect with another path on a specific turn
-def isIntersecting(currentTokenPath, allPaths):
-    for i in range(len(currentTokenPath)):
-        for path in allPaths:
-            if (currentTokenPath[i]==path[i]):
-                return True
-    return False
-
-def fight(uppers, lowers):
-    for first in uppers:
-        i=0
-        for second in range(len(lowers)):
-            if (uppers[first].x,uppers[first].y) == (lowers[second].x,lowers[second].y):
-                if (uppers[first].type == 'r'):
-                    if(lowers[second].type == 's'):
-                        lowers[second].kill()
-                        lowers.pop(i)
-                elif (uppers[first].type == 's'):
-                    if(lowers[second].type == 'p'):
-                        lowers[second].kill()
-                        lowers.pop(i)
-                elif (uppers[first].type == 'p'):
-                    if(lowers[second].type == 'r'):
-                        lowers[second].kill()
-                        lowers.pop(second)
-        for third in range(len(uppers)):
-            if(first==third):
-                continue
-            if (uppers[first].x,uppers[first].y) == (uppers[third].x,uppers[third].y):
-                if (uppers[first].type == 'r'):
-                    if(uppers[third].type == 's'):
-                        uppers[third].kill()
-                        lowers.pop(i)
-                elif (uppers[first].type == 's'):
-                    if(uppers[third].type == 'p'):
-                        uppers[third].kill()
-                        lowers.pop(i)
-                elif (uppers[first].type == 'p'):
-                    if(uppers[third].type == 'r'):
-                        uppers[third].kill()
-                        lowers.pop(third)
+    
+    # Remove duplicates, putting priority on slides over swings
+    temp = []
+    for (x,y,moveType) in states:
+        if moveType == "SLIDE":
+            temp.append((x,y,moveType))
+        elif not ((x,y,"SLIDE") in states):
+            temp.append((x,y,moveType))
+    return temp
 
 # Uses the A* pathfinding algorithm to find the shortest path
 # and returns that path as an array of 3-tuples (x, y, moveType)
@@ -213,7 +198,7 @@ def findPath(token, uppers, lowers, blocks):
     # Return empty path if no path found
     return []
 
-# Entrypoint
+# Entrypoint for the search algorithm
 def main():
     try:
         with open(sys.argv[1]) as file:
@@ -244,7 +229,10 @@ def main():
         # Find a path for each upper token
         paths = []
         for token in upperTokens:
-            paths.append((token, findPath(token, upperTokens, activeTargets, blockTokens)))
+            path = findPath(token, upperTokens, activeTargets, blockTokens)
+            paths.append((token, path))
+            if len(path) > 1:
+                token.nextPosition = (path[1][0],path[1][1])
         
         # Move token by one move from the path
         for (token,path) in paths:
@@ -260,5 +248,9 @@ def main():
             print(f"Turn {roundCount}: {path[1][2]} from {(path[0][0],path[0][1])} to {(path[1][0],path[1][1])}")
             if(len(path) == 2):
                 target = calcClosestTarget(token,activeTargets)[1]
-                activeTargets.remove(target)
+                if target in activeTargets:
+                    activeTargets.remove(target)
+            
+            # Reset token's next position
+            token.nextPosition = None
         roundCount += 1
