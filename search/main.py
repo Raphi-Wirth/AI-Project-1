@@ -16,6 +16,8 @@ from search.cell import Cell
 
 # Max x value for the grid
 MAX_X = 4
+upperTokensThrown = 0
+lowerTokensThrown = 0
 
 # Generates a board dictionary in the format of the board printing
 # function
@@ -28,6 +30,39 @@ def generate_board_dict(uppers,lowers,blocks):
     for block in blocks:
         board_dict[(block.x,block.y)] = "block"
     return board_dict
+
+def throw(pos, tokenType, uppers, lowers, player):
+    move = 0
+    if(player == 'upper'):
+        if(upperTokensThrown >= 9):
+            return '9 Tokens already thrown. Limit reached'
+        if(pos[0]<4-upperTokensThrown):
+            return 'Cannot throw to this position'
+        else:
+            for opossingToken in uppers + lowers:
+                if((pos) == (opossingToken.x, opossingToken.y)):
+                    move = whoWins(tokenType, opossingToken.type)
+    if(player == 'lower'):
+        if(lowerTokensThrown >= 9):
+            return '9 Tokens already thrown. Limit reached'
+        if(pos[0]>-4+lowerTokensThrown):
+            return 'Cannot throw to this position'
+        else:
+            for opossingToken in uppers + lowers:
+                if((pos) == (opossingToken.x, opossingToken.y)):
+                    move = whoWins(tokenType, opossingToken.type)
+    if(move==1 or move == 0 and player =='upper'):
+        uppers.append(Token(pos[0],pos[1],tokenType))
+        upperTokensThrown += 1
+        return 'Successfully thrown to' + str(pos)
+    if(move==1 or move == 0 and player =='lower'):
+        lowers.append(Token(pos[0],pos[1],tokenType))
+        lowerTokensThrown += 1
+        return 'Successfully thrown to' + str(pos)
+    if(move == -1):
+        return 'This throw would result in defeat'
+
+def evaluateThrow(pos, tokenType, uppers, lowers, player):
 
 # Calculate the manhattan distance between two points
 def calcDistance(p1,p2):
