@@ -1,35 +1,4 @@
-"""
-COMP30024 Artificial Intelligence, Semester 1, 2021
-Project Part A: Searching
-
-This script contains the entry point to the program (the code in
-`__main__.py` calls `main()`).
-"""
-
-import sys
-import json
-import math
-
-from search.util import print_board, print_slide, print_swing
-from search.token import Token
-from search.cell import Cell
-
-# Max x value for the grid
-MAX_X = 4
-upperTokensThrown = 0
-lowerTokensThrown = 0
-
-# Generates a board dictionary in the format of the board printing
-# function
-def generate_board_dict(uppers,lowers,blocks):
-    board_dict = {}
-    for upper in uppers:
-        board_dict[(upper.x,upper.y)] = f"{upper.type}, u"
-    for lower in lowers:
-        board_dict[(lower.x,lower.y)] = f"{lower.type}, l"
-    for block in blocks:
-        board_dict[(block.x,block.y)] = "block"
-    return board_dict
+from token import Token
 
 def throw(pos, tokenType, uppers, lowers, player):
     move = 0
@@ -61,9 +30,6 @@ def throw(pos, tokenType, uppers, lowers, player):
         return 'Successfully thrown to' + str(pos)
     if(move == -1):
         return 'This throw would result in defeat'
-
-def evaluateThrow(pos, tokenType, uppers, lowers, player):
-    pass
 
 # Calculate the manhattan distance between two points
 def calcDistance(p1,p2):
@@ -233,60 +199,3 @@ def findPath(token, uppers, lowers, blocks):
         sorted(openList, key=lambda op: op.totalCost)
     # Return empty path if no path found
     return []
-
-# Entrypoint for the search algorithm
-def main():
-    try:
-        with open(sys.argv[1]) as file:
-            data = json.load(file)
-    except IndexError:
-        print("usage: python3 -m search path/to/input.json", file=sys.stderr)
-        sys.exit(1)
-    
-    # Load in upper, lower and block tokens as seperate arrays (There
-    # may be a more compact way to do this)
-    upperTokens = []
-    lowerTokens = []
-    blockTokens = []
-    for upperRaw in data['upper']:
-        upper = Token(upperRaw[1], upperRaw[2], upperRaw[0])
-        upperTokens.append(upper)
-    for lowerRaw in data['lower']:
-        lower = Token(lowerRaw[1], lowerRaw[2], lowerRaw[0])
-        lowerTokens.append(lower)
-    for blockRaw in data['block']:
-        block = Token(blockRaw[1], blockRaw[2], "b")
-        blockTokens.append(block)
-
-    # While targets still exist, move tokens closer and closer
-    activeTargets = [x for x in lowerTokens]
-    roundCount = 1
-    while(len(activeTargets) > 0):
-        # Find a path for each upper token
-        paths = []
-        for token in upperTokens:
-            path = findPath(token, upperTokens, activeTargets, blockTokens)
-            paths.append((token, path))
-            if len(path) > 1:
-                token.nextPosition = (path[1][0],path[1][1])
-        
-        # Move token by one move from the path
-        for (token,path) in paths:
-            # If no path could be calculated, move token by random direction
-            if(len(path) == 0):
-                states = calcStates(token, upperTokens, activeTargets, blockTokens, 0)
-                print(f"Turn {roundCount}: {states[0][2]} from {(token.x,token.y)} to {(states[0][0],states[0][1])}")
-                (token.x,token.y) = (states[0][0],states[0][1])
-                continue
-            
-            # Move token along path
-            (token.x,token.y) = (path[1][0],path[1][1])
-            print(f"Turn {roundCount}: {path[1][2]} from {(path[0][0],path[0][1])} to {(path[1][0],path[1][1])}")
-            if(len(path) == 2):
-                target = calcClosestTarget(token,activeTargets)[1]
-                if target in activeTargets:
-                    activeTargets.remove(target)
-            
-            # Reset token's next position
-            token.nextPosition = None
-        roundCount += 1
