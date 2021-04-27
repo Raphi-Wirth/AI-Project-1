@@ -1,35 +1,6 @@
 from token import Token
 
-def throw(pos, tokenType, uppers, lowers, player):
-    move = 0
-    if(player == 'upper'):
-        if(upperTokensThrown >= 9):
-            return '9 Tokens already thrown. Limit reached'
-        if(pos[0]<4-upperTokensThrown):
-            return 'Cannot throw to this position'
-        else:
-            for opossingToken in uppers + lowers:
-                if((pos) == (opossingToken.x, opossingToken.y)):
-                    move = whoWins(tokenType, opossingToken.type)
-    if(player == 'lower'):
-        if(lowerTokensThrown >= 9):
-            return '9 Tokens already thrown. Limit reached'
-        if(pos[0]>-4+lowerTokensThrown):
-            return 'Cannot throw to this position'
-        else:
-            for opossingToken in uppers + lowers:
-                if((pos) == (opossingToken.x, opossingToken.y)):
-                    move = whoWins(tokenType, opossingToken.type)
-    if(move==1 or move == 0 and player =='upper'):
-        uppers.append(Token(pos[0],pos[1],tokenType))
-        upperTokensThrown += 1
-        return 'Successfully thrown to' + str(pos)
-    if(move==1 or move == 0 and player =='lower'):
-        lowers.append(Token(pos[0],pos[1],tokenType))
-        lowerTokensThrown += 1
-        return 'Successfully thrown to' + str(pos)
-    if(move == -1):
-        return 'This throw would result in defeat'
+MAX_X = 4
 
 # Calculate the manhattan distance between two points
 def calcDistance(p1,p2):
@@ -134,68 +105,3 @@ def calcStates(token, uppers, lowers, blocks, isSwing):
         elif not ((x,y,"SLIDE") in states):
             temp.append((x,y,moveType))
     return temp
-
-# Uses the A* pathfinding algorithm to find the shortest path
-# and returns that path as an array of 3-tuples (x, y, moveType)
-def findPath(token, uppers, lowers, blocks):
-    # Keep track of open and closed cells
-    # Open = search the cell for children
-    # Closed = don't search that cell anymore
-    openList = []
-    closedList = []
-
-    # Make cell for the first position
-    start = Cell((token.x,token.y),None,"")
-    openList.append(start)
-
-    while len(openList) > 0:
-        current = openList[0]
-        
-        # Remove from open and add to closed
-        openList.pop(0)
-        closedList.append(current)
-
-        # If closest target has position 0 then path has been found
-        closestDistance = calcClosestTarget(Token(current.pos[0],current.pos[1],token.type),lowers)[0]
-        if closestDistance == 0:
-            # Iterate through parent nodes and add to list
-            path = []
-            while current != None:
-                path.append((current.pos[0],current.pos[1],current.moveType))
-                current = current.parent
-            return path[::-1]
-        
-        # Get children from calcStates
-        childrenPositions = calcStates(Token(current.pos[0],current.pos[1],token.type),uppers,lowers,blocks,0)
-        children = []
-        for (x,y,moveType) in childrenPositions:
-            children.append(Cell((x,y), current, moveType))
-        
-        for child in children:
-            # If child position is in closed positions, continue
-            cont = False
-            for closed in closedList:
-                if child.pos == closed.pos:
-                    cont = True
-            if cont:
-                continue
-            
-            # Calculate path costs and heuristics for cell
-            child.pathCost = current.pathCost + 1
-            child.totalCost = child.pathCost + closestDistance
-
-            # If this pathcost is more expensive than the same positions prev pathcost
-            # then continue
-            for op in openList:
-                if op.pos == child.pos and child.pathCost > op.pathCost:
-                    cont=True
-            if cont:
-                continue
-            
-            # Add child to list and sort the list
-            openList.append(child)
-        
-        # Sort the open cells list by total cost
-        sorted(openList, key=lambda op: op.totalCost)
-    # Return empty path if no path found
-    return []
