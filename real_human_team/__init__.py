@@ -1,1 +1,1 @@
-from team_name.player import Player
+from real_human_team.player import Player
