@@ -1,3 +1,10 @@
+import json
+import typing
+import itertools
+import collections
+
+from util import print_board
+
 class State(typing.NamedTuple):
     # Note: By subclassing namedtuple, we get efficient, immutable instances
     # and we automatically get sensible definitions for __eq__ and __hash__.
@@ -11,7 +18,6 @@ class State(typing.NamedTuple):
     # block tokens):
     all_hexes:    frozenset
     
-
     # When subclassing namedtuple, we should control creation of instances
     # using a separate classmethod, rather than overriding __init__.
     @classmethod
@@ -30,9 +36,8 @@ class State(typing.NamedTuple):
         data = json.load(file)
         upper_tokens = (Token(Hex(r, q), s) for s, r, q in data["upper"])
         lower_tokens = (Token(Hex(r, q), s) for s, r, q in data["lower"])
-        all_hexes = ALL_HEXES - {Hex(r, q) for _s, r, q in data["block"]}
+        all_hexes = ALL_HEXES
         return cls.new(upper_tokens, lower_tokens, all_hexes)
-
 
     # The core functionality of the state is to compute its available
     # actions and their corresponding successor states.
@@ -95,8 +100,6 @@ class State(typing.NamedTuple):
             board[t.hex] += t.symbol.lower()
         for x, s in board.items():
             board[x] = f"({s})"
-        for x in ALL_HEXES - self.all_hexes:
-            board[x] = "BLOCK"
         print_board(board, message, **kwargs)
 
 
@@ -137,3 +140,9 @@ WHAT_BEATS = {'r': 'p', 'p': 's', 's': 'r'}
 class Token(typing.NamedTuple):
     hex:    Hex
     symbol: str
+
+if __name__ == "__main__":
+    lower_tokens = (Token(Hex(0,1), 'r'),)
+    upper_tokens = (Token(Hex(2,1), 'R'),)
+    state = State.new(upper_tokens, lower_tokens, ALL_HEXES)
+    state.print()
