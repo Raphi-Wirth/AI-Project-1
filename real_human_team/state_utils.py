@@ -68,7 +68,6 @@ class State(typing.NamedTuple):
                 for col in range(-4, row+1):
                     for symbol in ['r','p','s']:
                         yield 'u', ('THROW', symbol, (4-row, col))
-                        pass
 
             # Slides and swings
             adjacent_x = _adjacent(x)
@@ -85,7 +84,12 @@ class State(typing.NamedTuple):
         ys_occupied_hexes = set(ys)
         def _lower_token_actions(x):
             # Generate throws
-            
+            for row in range(self.upper_throws+1):
+                # Generate column range
+                for col in range(-row, 4+1):
+                    for symbol in ['r','p','s']:
+                        yield 'u', ('THROW', symbol, (-4+row, col))
+
             # Slides and swings
             adjacent_y = _adjacent(x)
             for y in adjacent_y:
@@ -110,6 +114,8 @@ class State(typing.NamedTuple):
         # move upper and lower tokens
         new_upper_tokens = list(self.upper_tokens)
         new_lower_tokens = list(self.lower_tokens)
+        new_upper_throws = self.upper_throws
+        new_lower_throws = self.lower_throws
         for p, (_a, x, y) in action:
             # lookup the symbol (any token on this hex will do, since all
             # tokens here will have the same symbol since the last battle)
@@ -117,8 +123,8 @@ class State(typing.NamedTuple):
                 # Add new token if thrown
                 if _a == 'THROW':
                     new_upper_tokens.append(Token(y, x))
+                    new_upper_throws += 1
                     continue
-                
                 # Lookup symbol if SLIDE or SWING
                 for t in range(len(new_upper_tokens)):
                     if new_upper_tokens[t].hex == x:
@@ -127,7 +133,13 @@ class State(typing.NamedTuple):
                         break
                 #s = [t.symbol for t in self.upper_tokens if t.hex == x][0]
                 new_upper_tokens.append(Token(y, s))
+            
             if p == 'l':
+                # Add new token if thrown
+                if _a == 'THROW':
+                    new_lower_tokens.append(Token(y, x))
+                    new_lower_throws += 1
+                    continue
                 for t in range(len(new_lower_tokens)):
                     if new_lower_tokens[t].hex == x:
                         s = new_lower_tokens[t].symbol
@@ -151,7 +163,8 @@ class State(typing.NamedTuple):
                     los_at_x = [t for t in los_at_x if t.symbol != p]
             safe_upper_tokens.extend(ups_at_x)
             safe_lower_tokens.extend(los_at_x)
-        return self.new(safe_upper_tokens, safe_lower_tokens, self.all_hexes, 0, 0)
+        return self.new(safe_upper_tokens, safe_lower_tokens, self.all_hexes, 
+                        new_upper_throws, new_lower_throws)
 
     # For easier debugging, a helper method to print the current state.
     def print(self, message="", **kwargs):
