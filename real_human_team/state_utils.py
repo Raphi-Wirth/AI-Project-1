@@ -50,28 +50,67 @@ class State(typing.NamedTuple):
         Generate all available 'actions' (each 'action' is actually a
         collection of actions, one for each upper token).
         """
-        xs = [x for x, _s in self.upper_tokens]
-        occupied_hexes = set(xs)
         def _adjacent(x):
             return self.all_hexes & {x + y for y in HEX_STEPS}
-        def _token_actions(x):
+
+        # Upper token actions
+        xs = [x for x, _s in self.upper_tokens]
+        xs_occupied_hexes = set(xs)
+        def _upper_token_actions(x):
             adjacent_x = _adjacent(x)
             for y in adjacent_x:
-                yield "SLIDE", x, y
-                if y in occupied_hexes:
+                yield 'u', ("SLIDE", x, y)
+                if y in xs_occupied_hexes:
                     opposite_y = _adjacent(y) - adjacent_x - {x}
                     for z in opposite_y:
-                        yield "SWING", x, z
-        return itertools.product(*map(_token_actions, xs))
+                        yield 'u', ("SWING", x, z)
+            adjacent_y = _adjacent(x)
+        
+        # Lower token actions
+        ys = [y for y, _s in self.lower_tokens]
+        ys_occupied_hexes = set(ys)
+        def _lower_token_actions(x):
+            adjacent_y = _adjacent(x)
+            for y in adjacent_y:
+                yield 'l', ("SLIDE", x, y)
+                if y in ys_occupied_hexes:
+                    opposite_y = _adjacent(x) - adjacent_y - {x}
+                    for z in opposite_y:
+                        yield 'l', ("SWING", x, z)
+            adjacent_y = _adjacent(x)
+
+        # Print all actions for debugging
+        # for t, a in enumerate(itertools.product(list(*map(_upper_token_actions, xs)),
+        #                            list(*map(_lower_token_actions, ys)))):
+        #     print(t, a)
+
+        return itertools.product(
+                list(*map(_upper_token_actions, xs)),
+                list(*map(_lower_token_actions, ys))
+            )
     
     def successor(self, action):
-        # move all upper tokens
-        new_upper_tokens = []
-        for _a, x, y in action:
+        # move upper and lower tokens
+        new_upper_tokens = list(self.upper_tokens)
+        new_lower_tokens = list(self.lower_tokens)
+        for p, (_a, x, y) in action:
             # lookup the symbol (any token on this hex will do, since all
             # tokens here will have the same symbol since the last battle)
-            s = [t.symbol for t in self.upper_tokens if t.hex == x][0]
-            new_upper_tokens.append(Token(y, s))
+            if p == 'u':
+                for t in range(len(new_upper_tokens)):
+                    if new_upper_tokens[t].hex == x:
+                        s = new_upper_tokens[t].symbol
+                        new_upper_tokens.pop(t)
+                        break
+                #s = [t.symbol for t in self.upper_tokens if t.hex == x][0]
+                new_upper_tokens.append(Token(y, s))
+            if p == 'l':
+                for t in range(len(new_lower_tokens)):
+                    if new_lower_tokens[t].hex == x:
+                        s = new_lower_tokens[t].symbol
+                        new_lower_tokens.pop(t)
+                        break
+                new_lower_tokens.append(Token(y, s)) 
 
         # where tokens clash, do battle
         # TODO: only necessary to check this at destinations of actions
@@ -80,11 +119,11 @@ class State(typing.NamedTuple):
         safe_lower_tokens = []
         for x in self.all_hexes:
             ups_at_x = [t for t in new_upper_tokens  if t.hex == x]
-            los_at_x = [t for t in self.lower_tokens if t.hex == x]
+            los_at_x = [t for t in new_lower_tokens if t.hex == x]
             symbols = {t.symbol for t in ups_at_x + los_at_x}
             if len(symbols) > 1:
                 for s in symbols:
-                    p = BEATS_WHAT[s]
+                    p = BEATS_WHAT[s.lower()]
                     ups_at_x = [t for t in ups_at_x if t.symbol != p]
                     los_at_x = [t for t in los_at_x if t.symbol != p]
             safe_upper_tokens.extend(ups_at_x)
@@ -146,3 +185,6 @@ if __name__ == "__main__":
     upper_tokens = (Token(Hex(2,1), 'R'),)
     state = State.new(upper_tokens, lower_tokens, ALL_HEXES)
     state.print()
+    for action, successor in state.actions_successors():
+        print(action)
+        successor.print()
