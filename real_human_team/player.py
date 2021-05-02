@@ -1,6 +1,12 @@
+from state_utils import *
+
 class Player:
     thrown_tokens = 0
     tokens = []
+    offensiveHueristicWeight = 1
+    defensiveHeuristicWeight = 1
+
+
     def __init__(self, player):
         """
         Called once at the beginning of a game to initialise this player.
@@ -12,6 +18,7 @@ class Player:
         """
         # put your code here
         self.player_type = player
+        self.currentState = state.new([],[],state.all_hexes,0,0)
 
     def action(self):
         """
@@ -29,3 +36,33 @@ class Player:
         and player_action is this instance's latest chosen action.
         """
         # put your code here
+    
+    def calcStateHeuristic(self, upperTokens, lowerTokens):
+        offensiveHeuristicValue = 0
+        defensiveHeuristicValue = 0
+        for upperToken in upperTokens:
+            for lowerToken in lowerTokens:
+                if (lowerToken.symbol == BEATS_WHAT[upperToken.symbol]):
+                    defensiveHeuristicValue += Hex.dist(upperToken.hex, lowerToken.hex)*self.defensiveHueristicWeight
+                elif (upperToken.symbol == BEATS_WHAT[lowerToken.symbol]):
+                    offensiveHeuristicValue += Hex.dist(upperToken.hex, lowerToken.hex)*self.offensiveHueristicWeight
+        return (offensiveHeuristicValue + defensiveHeuristicValue)
+    
+def minmax(state, layers):
+    originalState = state
+    allActions = state.actions()
+    allHeuristics = []
+    player = Player('u')
+    for action in allActions:
+        testingState = state.successor(action)
+        State.print(state)
+        allHeuristics.append(player.calcStateHeuristic(testingState.upper_tokens, testingState.lower_tokens), action)
+    allHeuristics.sort(key = lambda tup: tup[0])
+    print(allHeuristics[0])
+        
+if __name__ == "__main__":
+    lower_tokens = (Token(Hex(0,1), 'r'),)
+    upper_tokens = (Token(Hex(2,1), 's'),)
+    state = State.new(upper_tokens, lower_tokens, ALL_HEXES, 0, 0)
+    minmax(state)
+

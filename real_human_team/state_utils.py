@@ -222,6 +222,6 @@ if __name__ == "__main__":
     state = State.new(upper_tokens, lower_tokens, ALL_HEXES, 0, 0)
     state.print()
     for action, successor in state.actions_successors():
-        print(action)
-        successor.print()
+        #print(action)
+        #successor.print()
         pass
