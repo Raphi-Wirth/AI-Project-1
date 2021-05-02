@@ -61,21 +61,14 @@ class State(typing.NamedTuple):
         # Upper token actions
         xs = [x for x, _s in self.upper_tokens]
         xs_occupied_hexes = set(xs)
+        # Generate THROW actions
         def _upper_throw_actions():
             for row in range(self.upper_throws+1):
-                # Generate column range
                 for col in range(-4, row+1):
                     for symbol in ['r','p','s']:
                         yield 'u', ('THROW', symbol, (4-row, col))
+        # Generate SLIDE, SWING actions
         def _upper_token_actions(x):
-            # Generate throw moves
-            # for row in range(self.upper_throws+1):
-            #     # Generate column range
-            #     for col in range(-4, row+1):
-            #         for symbol in ['r','p','s']:
-            #             yield 'u', ('THROW', symbol, (4-row, col))
-
-            # Slides and swings
             adjacent_x = _adjacent(x)
             for y in adjacent_x:
                 yield 'u', ("SLIDE", x, y)
@@ -88,22 +81,14 @@ class State(typing.NamedTuple):
         # Lower token actions
         ys = [y for y, _s in self.lower_tokens]
         ys_occupied_hexes = set(ys)
+        # Generate THROW actions
         def _lower_throw_actions():
-            # Generate throws
             for row in range(self.upper_throws+1):
-                # Generate column range
                 for col in range(-row, 4+1):
                     for symbol in ['r','p','s']:
                         yield 'l', ('THROW', symbol, (-4+row, col))
+        # Generate SLIDE, SWING actions
         def _lower_token_actions(x):
-            # Generate throws
-            # for row in range(self.upper_throws+1):
-            #     # Generate column range
-            #     for col in range(-row, 4+1):
-            #         for symbol in ['r','p','s']:
-            #             yield 'l', ('THROW', symbol, (-4+row, col))
-
-            # Slides and swings
             adjacent_y = _adjacent(x)
             for y in adjacent_y:
                 yield 'l', ("SLIDE", x, y)
@@ -113,16 +98,26 @@ class State(typing.NamedTuple):
                         yield 'l', ("SWING", x, z)
             adjacent_y = _adjacent(x)
 
-        # Print all actions for debugging
-        for t, a in enumerate(itertools.product(
-                                    list(*map(_upper_token_actions, xs)) + list(_upper_throw_actions()),
-                                    list(*map(_lower_token_actions, ys)) + list(_lower_throw_actions())
-                              )):
-            print(t, a)
+        # Pack all upper and lower moves into lists
+        upper_maps = map(_upper_token_actions,xs)
+        upper_moves = list(_upper_throw_actions())
+        for gen in upper_maps:
+            upper_moves += list(*gen)
+
+        lower_maps = map(_lower_token_actions, ys)
+        lower_moves = list(_lower_throw_actions())
+        for gen in lower_maps:
+            lower_moves += list(*gen)
+
+        # for t, a in enumerate(itertools.product(
+        #                             upper_moves,
+        #                             lower_moves
+        #                       )):
+        #     print(t, a)
 
         return itertools.product(
-                list(*map(_upper_token_actions, xs)) + list(_upper_throw_actions()),
-                list(*map(_lower_token_actions, ys)) + list(_lower_throw_actions())
+                upper_moves,
+                lower_moves
             )
     
     def successor(self, action):
@@ -239,4 +234,9 @@ if __name__ == "__main__":
     for action, successor in state.actions_successors():
         #print(action)
         #successor.print()
+        for action2, successor2 in successor.actions_successors():
+            for action3, successor3 in successor2.actions_successors():
+                pass
+            pass
         pass
+    print('done')
