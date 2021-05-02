@@ -105,7 +105,7 @@ class State(typing.NamedTuple):
             for y in adjacent_y:
                 yield 'l', ("SLIDE", x, y)
                 if y in ys_occupied_hexes:
-                    opposite_y = _adjacent(x) - adjacent_y - {x}
+                    opposite_y = _adjacent(y) - adjacent_y - {x}
                     for z in opposite_y:
                         yield 'l', ("SWING", x, z)
             adjacent_y = _adjacent(x)
@@ -114,12 +114,12 @@ class State(typing.NamedTuple):
         upper_maps = map(_upper_token_actions,xs)
         upper_moves = list(_upper_throw_actions())
         for gen in upper_maps:
-            upper_moves += list(*gen)
+            upper_moves += [*gen]
 
         lower_maps = map(_lower_token_actions, ys)
         lower_moves = list(_lower_throw_actions())
         for gen in lower_maps:
-            lower_moves += list(*gen)
+            lower_moves += [*gen]
 
         for t, a in enumerate(itertools.product(
                                     upper_moves,
@@ -240,8 +240,8 @@ class Token(typing.NamedTuple):
 
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
-    upper_tokens = (Token(Hex(2,1), 'R'),)
-    state = State.new([], [], ALL_HEXES, 9, 9)
+    upper_tokens = (Token(Hex(2,1), 'R'),Token(Hex(3,1), 'R'),)
+    state = State.new([], upper_tokens, ALL_HEXES, 0, 0)
     for action, successor in state.actions_successors():
         #print(action)
         #successor.print()
