@@ -63,8 +63,14 @@ class State(typing.NamedTuple):
         xs_occupied_hexes = set(xs)
         # Generate THROW actions
         def _upper_throw_actions():
+            if self.upper_throws >= 9:
+                return
             for row in range(self.upper_throws+1):
-                for col in range(-4, row+1):
+                if 4-row >= 0:
+                    col_range = range(-4, row+1)
+                else:
+                    col_range = range(-8+row, 4+1)
+                for col in col_range:
                     for symbol in ['r','p','s']:
                         yield 'u', ('THROW', symbol, (4-row, col))
         # Generate SLIDE, SWING actions
@@ -83,8 +89,14 @@ class State(typing.NamedTuple):
         ys_occupied_hexes = set(ys)
         # Generate THROW actions
         def _lower_throw_actions():
+            if self.lower_throws >= 9:
+                return
             for row in range(self.upper_throws+1):
-                for col in range(-row, 4+1):
+                if -4+row <= 0:
+                    col_range = range(-row, 4+1)
+                else:
+                    col_range = range(-4, 8-row+1)
+                for col in col_range:
                     for symbol in ['r','p','s']:
                         yield 'l', ('THROW', symbol, (-4+row, col))
         # Generate SLIDE, SWING actions
@@ -109,11 +121,11 @@ class State(typing.NamedTuple):
         for gen in lower_maps:
             lower_moves += list(*gen)
 
-        # for t, a in enumerate(itertools.product(
-        #                             upper_moves,
-        #                             lower_moves
-        #                       )):
-        #     print(t, a)
+        for t, a in enumerate(itertools.product(
+                                    upper_moves,
+                                    lower_moves
+                              )):
+            print(t, a)
 
         return itertools.product(
                 upper_moves,
@@ -229,14 +241,13 @@ class Token(typing.NamedTuple):
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
     upper_tokens = (Token(Hex(2,1), 'R'),)
-    state = State.new([], [], ALL_HEXES, 0, 0)
-    state.print()
+    state = State.new([], [], ALL_HEXES, 9, 9)
     for action, successor in state.actions_successors():
         #print(action)
         #successor.print()
-        for action2, successor2 in successor.actions_successors():
-            for action3, successor3 in successor2.actions_successors():
-                pass
-            pass
+        # for action2, successor2 in successor.actions_successors():
+        #     # for action3, successor3 in successor2.actions_successors():
+        #     #     pass
+        #     pass
         pass
     print('done')
