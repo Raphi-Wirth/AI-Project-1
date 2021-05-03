@@ -72,7 +72,7 @@ class State(typing.NamedTuple):
                     col_range = range(-8+row, 4+1)
                 for col in col_range:
                     for symbol in ['r','p','s']:
-                        yield 'u', ('THROW', symbol, (4-row, col))
+                        yield 'u', ('THROW', symbol, Hex(4-row, col))
         # Generate SLIDE, SWING actions
         def _upper_token_actions(x):
             adjacent_x = _adjacent(x)
@@ -98,7 +98,7 @@ class State(typing.NamedTuple):
                     col_range = range(-4, 8-row+1)
                 for col in col_range:
                     for symbol in ['r','p','s']:
-                        yield 'l', ('THROW', symbol, (-4+row, col))
+                        yield 'l', ('THROW', symbol, Hex(-4+row, col))
         # Generate SLIDE, SWING actions
         def _lower_token_actions(x):
             adjacent_y = _adjacent(x)
@@ -242,7 +242,9 @@ if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
     upper_tokens = (Token(Hex(2,1), 'R'),Token(Hex(3,1), 'R'),)
     state = State.new([], upper_tokens, ALL_HEXES, 0, 0)
+    successors = []
     for action, successor in state.actions_successors():
+        successors.append(successor)
         #print(action)
         #successor.print()
         # for action2, successor2 in successor.actions_successors():
@@ -250,4 +252,8 @@ if __name__ == "__main__":
         #     #     pass
         #     pass
         pass
+    print(successors[0].lower_tokens[0])
+    lower_tokens = successors[102].lower_tokens
+    upper_tokens = successors[102].upper_tokens
+    print(Hex.dist(lower_tokens[0][0],upper_tokens[0][0]))
     print('done')
