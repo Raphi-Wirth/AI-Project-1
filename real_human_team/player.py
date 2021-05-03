@@ -1,4 +1,4 @@
-from state_utils import *
+from real_human_team.state_utils import *
 import math
 import random
 
@@ -19,8 +19,8 @@ class Player:
         as Lower).
         """
         # put your code here
-        self.player_type = player
-        self.currentState = state.new([],[],state.all_hexes,0,0)
+        self.player_type = player[0]
+        self.currentState = State.new([],[],ALL_HEXES,0,0)
 
     def action(self):
         """
@@ -28,6 +28,7 @@ class Player:
         of the game, select an action to play this turn.
         """
         # put your code here
+        return self.get_action(self.currentState)
     
     def update(self, opponent_action, player_action):
         """
@@ -38,6 +39,25 @@ class Player:
         and player_action is this instance's latest chosen action.
         """
         # put your code here
+        if self.player_type == 'u':
+            action = ('u', player_action),('l', opponent_action)
+        else:
+            action = ('u', opponent_action),('l', player_action)
+        self.currentState = self.currentState.successor(action)
+    
+    def get_action(self, state):
+        maxActions = []
+        maxEv = -math.inf
+        for action, successor in state.actions_successors():
+            maximinEv = maximin(successor, 0, self.player_type)
+            if maximinEv > maxEv:
+                maxEv = maximinEv
+                maxActions = [action]
+            if maximinEv == maxEv:
+                maxActions.append(action)
+        if self.player_type == 'u':
+            return random.choice(maxActions)[0][1]
+        return random.choice(maxActions)[1][1]
     
     def calcStateHeuristic(self, upperTokens, lowerTokens):
         offensiveHeuristicValue = 0
@@ -73,22 +93,12 @@ def minmax(state):
     state = state.successor(allHeuristics[-1][1][1])
     state.print()
     return state
-
-def get_action(state):
-    maxActions = []
-    maxEv = -math.inf
-    for action, successor in state.actions_successors():
-        maximinEv = maximin(successor,0)
-        if maximinEv > maxEv:
-            maxEv = maximinEv
-            maxActions = [action]
-        if maximinEv == maxEv:
-            maxActions.append(action)
-    return random.choice(maxActions)
         
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
     upper_tokens = (Token(Hex(2,1), 's'),)
     state = State.new([], [], ALL_HEXES, 0, 0)
-    print(get_action(state))
+    player = Player('upper')
+    print(player.player_type)
+    print(player.action())
 

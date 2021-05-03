@@ -4,8 +4,8 @@ import itertools
 import collections
 import numpy as np
 
-from util import print_board
-from gametheory import solve_game
+from real_human_team.util import print_board
+from real_human_team.gametheory import solve_game
 
 class State:
     # Note: By subclassing namedtuple, we get efficient, immutable instances
@@ -292,19 +292,21 @@ def heuristic(state):
                 heuristic += Hex.dist(upper.hex, lower.hex)
     return heuristic
 
-def min_ev(state):
-    return solve_game(np.array(state.payoff_matrix()))[1]
+def min_ev(state, rowplayer):
+    return solve_game(np.array(state.payoff_matrix()), rowplayer, rowplayer)[1]
 
-def maximin(state, depth):
+def maximin(state, depth, player_type):
     # Base case
     if depth == 0:
-        return min_ev(state)
-
+        if player_type == 'u':
+            return min_ev(state, True)
+        return min_ev(state, False)
+        
     # Generate new states
     new_states = [successor for _a, successor in state.actions_successors()]
 
     # Return maximum of the min ev's
-    return max([maximin(successor, depth-1) for successor in new_states])
+    return max([maximin(successor, depth-1, player_type) for successor in new_states])
 
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
