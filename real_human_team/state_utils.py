@@ -5,7 +5,7 @@ import collections
 
 from util import print_board
 
-class State(typing.NamedTuple):
+class State:
     # Note: By subclassing namedtuple, we get efficient, immutable instances
     # and we automatically get sensible definitions for __eq__ and __hash__.
 
@@ -46,6 +46,13 @@ class State(typing.NamedTuple):
         lower_tokens = (Token(Hex(r, q), s) for s, r, q in data["lower"])
         all_hexes = ALL_HEXES
         return cls.new(upper_tokens, lower_tokens, all_hexes, 0, 0)
+    
+    def __init__(self,upper_tokens, lower_tokens, all_hexes, upper_throws, lower_throws):
+        self.upper_tokens = upper_tokens
+        self.lower_tokens = lower_tokens
+        self.all_hexes = all_hexes
+        self.upper_throws = upper_throws
+        self.lower_throws = lower_throws
 
     # The core functionality of the state is to compute its available
     # actions and their corresponding successor states.
@@ -196,12 +203,15 @@ class State(typing.NamedTuple):
     
     # Generate payoff matrix of this state
     def payoff_matrix(self):
+        act_suc = [(action, successor) for action, successor in self.actions_successors()]
         row_index = {}
         col_index = {}
         row_count = 0
         col_count = 0
         matrix = [[0]*self.lower_actions_count]*self.upper_actions_count
-        for action, successor in self.actions_successors():
+        for action, successor in act_suc:
+            row = 0
+            col = 0
             for p, act in action:
                 if p == 'u':
                     upper_action = act
@@ -271,7 +281,7 @@ class Token(typing.NamedTuple):
     symbol: str
 
 def heuristic(state):
-        return 0
+    return 20
 
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
