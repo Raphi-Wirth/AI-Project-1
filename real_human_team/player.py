@@ -55,17 +55,20 @@ def minmax(state):
     player = Player('u')
     for action in allActions:
         testingState = state.successor(action)
-        for upperToken in testingState.upper_tokens:
-            print(upperToken)
-        allHeuristics.append((player.calcStateHeuristic(testingState.upper_tokens, testingState.lower_tokens), action))
-    allHeuristics.sort(key = lambda tup: tup[0])
+        allNextActions = testingState.actions()
+        currentHeuristics = []
+        for secondAction in allNextActions:
+            secondTestingState = testingState.successor(secondAction)
+            currentHeuristics.append((player.calcStateHeuristic(secondTestingState.upper_tokens, secondTestingState.lower_tokens), secondAction))
+        currentHeuristics.sort(key = lambda tup: tup[0])
+        allHeuristics.append((action,currentHeuristics[-1]))
     for i in range(len(allHeuristics)):
         print(allHeuristics[i])
+    
         
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
     upper_tokens = (Token(Hex(2,1), 's'),)
-    print(Hex.dist(upper_tokens[0].hex,lower_tokens[0].hex))
     state = State.new(upper_tokens, lower_tokens, ALL_HEXES, 0, 0)
     minmax(state)
 

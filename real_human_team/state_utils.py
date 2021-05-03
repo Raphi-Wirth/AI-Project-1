@@ -125,7 +125,8 @@ class State(typing.NamedTuple):
                                     upper_moves,
                                     lower_moves
                               )):
-            print(t, a)
+            #print(t, a)
+            pass
 
         return itertools.product(
                 upper_moves,
