@@ -48,14 +48,15 @@ class Player:
                     offensiveHeuristicValue += Hex.dist(upperToken.hex, lowerToken.hex)*self.offensiveHueristicWeight
         return (offensiveHeuristicValue + defensiveHeuristicValue)
     
-def minmax(state, layers):
+def minmax(state):
     originalState = state
     allActions = state.actions()
     allHeuristics = []
     player = Player('u')
     for action in allActions:
         testingState = state.successor(action)
-        State.print(state)
+        for upperToken in testingState.upper_tokens:
+            print(upperToken)
         allHeuristics.append(player.calcStateHeuristic(testingState.upper_tokens, testingState.lower_tokens), action)
     allHeuristics.sort(key = lambda tup: tup[0])
     print(allHeuristics[0])
@@ -63,6 +64,7 @@ def minmax(state, layers):
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
     upper_tokens = (Token(Hex(2,1), 's'),)
+    print(Hex.dist(upper_tokens[0].hex,lower_tokens[0].hex))
     state = State.new(upper_tokens, lower_tokens, ALL_HEXES, 0, 0)
     minmax(state)
 
