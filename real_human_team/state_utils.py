@@ -2,8 +2,10 @@ import json
 import typing
 import itertools
 import collections
+import numpy as np
 
 from util import print_board
+from gametheory import solve_game
 
 class State:
     # Note: By subclassing namedtuple, we get efficient, immutable instances
@@ -281,11 +283,15 @@ class Token(typing.NamedTuple):
     symbol: str
 
 def heuristic(state):
-    return 20
+    return 12
+
+def min_ev(state):
+    return solve_game(np.array(state.payoff_matrix()))[1]
 
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
     upper_tokens = (Token(Hex(2,1), 'R'),Token(Hex(3,1), 'R'),)
     state = State.new([], upper_tokens, ALL_HEXES, 0, 0)
-    print(state.payoff_matrix())
+    #print(state.payoff_matrix())
+    print(min_ev(state))
     print('done')
