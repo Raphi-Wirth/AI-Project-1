@@ -1,4 +1,6 @@
 from state_utils import *
+import math
+import random
 
 class Player:
     thrown_tokens = 0
@@ -71,12 +73,22 @@ def minmax(state):
     state = state.successor(allHeuristics[-1][1][1])
     state.print()
     return state
-    
+
+def get_action(state):
+    maxActions = []
+    maxEv = -math.inf
+    for action, successor in state.actions_successors():
+        maximinEv = maximin(successor,0)
+        if maximinEv > maxEv:
+            maxEv = maximinEv
+            maxActions = [action]
+        if maximinEv == maxEv:
+            maxActions.append(action)
+    return random.choice(maxActions)
         
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
     upper_tokens = (Token(Hex(2,1), 's'),)
-    state = State.new(upper_tokens, lower_tokens, ALL_HEXES, 0, 0)
-    state = minmax(state)
-    minmax(state)
+    state = State.new([], [], ALL_HEXES, 0, 0)
+    print(get_action(state))
 

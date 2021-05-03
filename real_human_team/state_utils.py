@@ -230,7 +230,7 @@ class State:
             else:
                 col_index[lower_action] = col_count
                 col_count+=1
-            matrix[row][col] = heuristic(self)
+            matrix[row][col] = heuristic(successor)-heuristic(self)
         return matrix
 
     # For easier debugging, a helper method to print the current state.
@@ -284,15 +284,34 @@ class Token(typing.NamedTuple):
     symbol: str
 
 def heuristic(state):
-    return 12
+    heuristic = 0
+    for upper in state.upper_tokens:
+        for lower in state.lower_tokens:
+            #print(upper.symbol, lower.symbol)
+            if (upper.symbol == BEATS_WHAT[lower.symbol]):
+                heuristic += Hex.dist(upper.hex, lower.hex)
+    return heuristic
 
 def min_ev(state):
     return solve_game(np.array(state.payoff_matrix()))[1]
 
+def maximin(state, depth):
+    # Base case
+    if depth == 0:
+        return min_ev(state)
+
+    # Generate new states
+    new_states = [successor for _a, successor in state.actions_successors()]
+
+    # Return maximum of the min ev's
+    return max([maximin(successor, depth-1) for successor in new_states])
+
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
-    upper_tokens = (Token(Hex(2,1), 'R'),Token(Hex(3,1), 'R'),)
-    state = State.new([], upper_tokens, ALL_HEXES, 0, 0)
-    #print(state.payoff_matrix())
+    upper_tokens = (Token(Hex(2,1), 'r'),Token(Hex(3,1), 'r'),)
+    state = State.new(upper_tokens, lower_tokens, ALL_HEXES, 0, 0)
+    state.print()
+    print(state.payoff_matrix())
     print(min_ev(state))
+    print(maximin(state,1))
     print('done')
