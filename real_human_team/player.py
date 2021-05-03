@@ -3,7 +3,7 @@ from state_utils import *
 class Player:
     thrown_tokens = 0
     tokens = []
-    offensiveHueristicWeight = 1
+    offensiveHeuristicWeight = 1
     defensiveHeuristicWeight = 1
 
 
@@ -43,9 +43,9 @@ class Player:
         for upperToken in upperTokens:
             for lowerToken in lowerTokens:
                 if (lowerToken.symbol == BEATS_WHAT[upperToken.symbol]):
-                    defensiveHeuristicValue += Hex.dist(upperToken.hex, lowerToken.hex)*self.defensiveHueristicWeight
+                    defensiveHeuristicValue += Hex.dist(upperToken.hex, lowerToken.hex)*self.defensiveHeuristicWeight
                 elif (upperToken.symbol == BEATS_WHAT[lowerToken.symbol]):
-                    offensiveHeuristicValue += Hex.dist(upperToken.hex, lowerToken.hex)*self.offensiveHueristicWeight
+                    offensiveHeuristicValue += Hex.dist(upperToken.hex, lowerToken.hex)*self.offensiveHeuristicWeight
         return (offensiveHeuristicValue + defensiveHeuristicValue)
     
 def minmax(state):
@@ -57,9 +57,10 @@ def minmax(state):
         testingState = state.successor(action)
         for upperToken in testingState.upper_tokens:
             print(upperToken)
-        allHeuristics.append(player.calcStateHeuristic(testingState.upper_tokens, testingState.lower_tokens), action)
+        allHeuristics.append((player.calcStateHeuristic(testingState.upper_tokens, testingState.lower_tokens), action))
     allHeuristics.sort(key = lambda tup: tup[0])
-    print(allHeuristics[0])
+    for i in range(len(allHeuristics)):
+        print(allHeuristics[i])
         
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
