@@ -62,8 +62,12 @@ def minmax(state):
             currentHeuristics.append((player.calcStateHeuristic(secondTestingState.upper_tokens, secondTestingState.lower_tokens), secondAction))
         currentHeuristics.sort(key = lambda tup: tup[0])
         allHeuristics.append((action,currentHeuristics[-1]))
-    for i in range(len(allHeuristics)):
-        print(allHeuristics[i])
+    allHeuristics.sort(key = lambda tup : tup[1][0])
+    #state.successor(allHeuristics[-1][0])
+    print(allHeuristics[-1][0])
+    print(allHeuristics[-1][1][1])
+    #state.successor(allHeuristics[-1][1][1])
+    print_board(state)
     
         
 if __name__ == "__main__":
