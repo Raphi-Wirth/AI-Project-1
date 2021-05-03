@@ -20,6 +20,9 @@ class State(typing.NamedTuple):
     # Hold information about how many times each player has thrown
     upper_throws: int
     lower_throws: int
+    # Information about how many actions one can take
+    upper_actions_count = 0
+    lower_actions_count = 0
     
     # When subclassing namedtuple, we should control creation of instances
     # using a separate classmethod, rather than overriding __init__.
@@ -127,6 +130,9 @@ class State(typing.NamedTuple):
                               )):
             print(t, a)
 
+        self.upper_actions_count = len(upper_moves)
+        self.lower_actions_count = len(lower_moves)
+
         return itertools.product(
                 upper_moves,
                 lower_moves
@@ -187,6 +193,32 @@ class State(typing.NamedTuple):
             safe_lower_tokens.extend(los_at_x)
         return self.new(safe_upper_tokens, safe_lower_tokens, self.all_hexes, 
                         new_upper_throws, new_lower_throws)
+    
+    # Generate payoff matrix of this state
+    def payoff_matrix(self):
+        row_index = {}
+        col_index = {}
+        row_count = 0
+        col_count = 0
+        matrix = [[0]*self.lower_actions_count]*self.upper_actions_count
+        for action, successor in self.actions_successors():
+            for p, act in action:
+                if p == 'u':
+                    upper_action = act
+                if p == 'l':
+                    lower_action = act
+            if upper_action in row_index.keys():
+                row = row_index[upper_action]
+            else:
+                row_index[upper_action] = row_count
+                row_count+=1
+            if lower_action in col_index.keys():
+                col = col_index[lower_action]
+            else:
+                col_index[lower_action] = col_count
+                col_count+=1
+            matrix[row][col] = heuristic(self)
+        return matrix
 
     # For easier debugging, a helper method to print the current state.
     def print(self, message="", **kwargs):
@@ -238,22 +270,12 @@ class Token(typing.NamedTuple):
     hex:    Hex
     symbol: str
 
+def heuristic(state):
+        return 0
+
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
     upper_tokens = (Token(Hex(2,1), 'R'),Token(Hex(3,1), 'R'),)
     state = State.new([], upper_tokens, ALL_HEXES, 0, 0)
-    successors = []
-    for action, successor in state.actions_successors():
-        successors.append(successor)
-        #print(action)
-        #successor.print()
-        # for action2, successor2 in successor.actions_successors():
-        #     # for action3, successor3 in successor2.actions_successors():
-        #     #     pass
-        #     pass
-        pass
-    print(successors[0].lower_tokens[0])
-    lower_tokens = successors[102].lower_tokens
-    upper_tokens = successors[102].upper_tokens
-    print(Hex.dist(lower_tokens[0][0],upper_tokens[0][0]))
+    print(state.payoff_matrix())
     print('done')
