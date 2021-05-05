@@ -4,6 +4,7 @@ import itertools
 import collections
 import numpy as np
 import scipy.optimize as opt
+import math
 
 from util import print_board
 from gametheory import solve_game
@@ -26,7 +27,6 @@ class State:
     # Information about how many actions one can take
     upper_actions_count = 0
     lower_actions_count = 0
-    actions_list = []
     
     # When subclassing namedtuple, we should control creation of instances
     # using a separate classmethod, rather than overriding __init__.
@@ -57,7 +57,6 @@ class State:
         self.all_hexes = all_hexes
         self.upper_throws = upper_throws
         self.lower_throws = lower_throws
-        self.actions_list = list(self.actions())
 
     # The core functionality of the state is to compute its available
     # actions and their corresponding successor states.
@@ -315,7 +314,7 @@ def maximin(state, depth, player_type):
 # Calculates alpha bound 
 # Works if f and e are row vectors
 def calc_alpha(p, f, e):
-    c = -e
+    c = -e    # -e because we want the max
     A_ub = -p.T
     b_ub = -f
     A_eq = np.matrix([1] * len(c))
@@ -332,7 +331,7 @@ def calc_beta(o, f, e):
     A_eq = np.matrix([1] * len(c))
     b_eq = [1]
     return opt.linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, 
-        b_eq=b_eq, bounds=(0,1)).x[0]
+        b_eq=b_eq, bounds=(0,1)).fun
 
 def print_test(state):
     actions = list(state.actions())
@@ -343,41 +342,50 @@ def print_test(state):
 
 # Simultaneous Move Alpha Beta Algorithm
 def smab(state, lower, upper, depth):
+    # Base case
+    # TODO: Add in base case when goal state has been reached
     if depth == 0:
         return solve_game(state.payoff_matrix())
-    actions = state.actions()
+
+    # Setup optimistic, pessimistic and other variables
+    actions = list(state.actions())
     p = np.matrix([[-1]*state.lower_actions_count]*state.upper_actions_count)
     o = np.matrix([[1]*state.lower_actions_count]*state.upper_actions_count)
     dominated_rows = []
     dominated_cols = []
+
+    # Main loop
     for a in range(state.upper_actions_count):
         for b in range(state.lower_actions_count):
             action = actions[a * state.lower_actions_count + b]
             if a not in dominated_rows \
                     and b not in dominated_cols:
+                print(a, b, dominated_rows, dominated_cols)
                 # Find LP for a
                 # TODO: Add alpha row
-                a_p = np.delete(np.delete(p, [b] + dominated_cols, 1), [a] + dominated_rows, 0)
-                a_e = np.delete(p[:,b], [a] + dominated_rows, 0)
+                a_row = np.matrix([lower]*p.shape[1])
+                a_p = np.delete(np.delete(np.append(p, a_row, 0), [b] + dominated_cols, 1), [a] + dominated_rows, 0)
+                a_e = np.delete(np.append(p[:, b], [[lower]], 0), [a] + dominated_rows, 0)
                 a_f = np.delete(o[a], [b] + dominated_cols, 1)
                 alpha = calc_alpha(a_p, a_f, a_e)
 
                 # Find LP for b
                 # TODO: Add beta col
-                b_o = np.delete(np.delete(o, [b] + dominated_cols, 1), [a] + dominated_rows, 0)
-                b_e = np.delete(o[a], [b] + dominated_cols, 1)
+                b_col = np.matrix([[upper]]*p.shape[0])
+                b_o = np.delete(np.delete(np.append(o, b_col, 1), [b] + dominated_cols, 1), [a] + dominated_rows, 0)
+                b_e = np.delete(np.append(o[a], [[upper]], 1), [b] + dominated_cols, 1)
                 b_f = np.delete(p[:,b], [a] + dominated_rows, 0)
                 beta = calc_beta(b_o, b_f, b_e)
 
                 successor = state.successor(action)
                 if alpha >= beta:
-                    v = smab(successor, alpha, alpha+0.01, depth-1)
+                    v = smab(successor, alpha, alpha + 0.001, depth-1)[1]
                     if v <= alpha:
                         dominated_rows.append(a)
                     else:
                         dominated_cols.append(b)
                 else:
-                    v = smab(successor, alpha, beta ,depth-1)
+                    v = smab(successor, alpha, beta, depth-1)[1]
                     if v <= alpha:
                         dominated_rows.append(a)
                     elif v >= beta:
@@ -387,8 +395,8 @@ def smab(state, lower, upper, depth):
                         p[a,b] = v
                         o[a,b] = v
     # Return solve_game with dominated actions removed
-    restricted_payoff_matrix = np.delete(np.delete(state.payoff_matrix(), dominated_cols, 1), dominated_rows, 0)
-    return solve_game(restricted_payoff_matrix)
+    #restricted_payoff_matrix = np.delete(np.delete(state.payoff_matrix(), dominated_cols, 1), dominated_rows, 0)
+    return solve_game(np.delete(np.delete(p, dominated_cols, 1), dominated_rows, 0))
 
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
@@ -396,22 +404,23 @@ if __name__ == "__main__":
     state = State.new(upper_tokens, lower_tokens, ALL_HEXES, 0, 0)
     state.print()
     
-    p = np.matrix([[-1]*state.lower_actions_count]*state.upper_actions_count)
-    o = np.matrix([[1]*state.lower_actions_count]*state.upper_actions_count)
-    #print(p)
-    #print(o)
-    # calculate alpha for (a,b) = (2,1)
-    #p = np.matrix('0 1; 2 3; 4 5; 6 7')
-    #o = np.matrix('0 1; 2 3; 4 5; 6 7')
-    a = 2
-    b = 1
-    p1 = np.delete(np.delete(p, b, 1), a, 0)
-    o1 = np.delete(np.delete(o, b, 1), a, 0)
-    e1 = np.delete(p[:,b], a, 0)
-    f1 = np.delete(o[a], b, 1)
-    #print(calc_alpha(p1, f, e))
-    e2 = np.delete(o[a], b, 1)
-    f2 = np.delete(p[:,b], a, 0)
-    print(calc_beta(o1, f2, e2))
+    # p = np.matrix([[-1]*state.lower_actions_count]*state.upper_actions_count)
+    # o = np.matrix([[1]*state.lower_actions_count]*state.upper_actions_count)
+    # #print(p)
+    # #print(o)
+    # # calculate alpha for (a,b) = (2,1)
+    # #p = np.matrix('0 1; 2 3; 4 5; 6 7')
+    # #o = np.matrix('0 1; 2 3; 4 5; 6 7')
+    # a = 2
+    # b = 1
+    # p1 = np.delete(np.delete(p, b, 1), a, 0)
+    # o1 = np.delete(np.delete(o, b, 1), a, 0)
+    # e1 = np.delete(p[:,b], a, 0)
+    # f1 = np.delete(o[a], b, 1)
+    # #print(calc_alpha(p1, f, e))
+    # e2 = np.delete(o[a], b, 1)
+    # f2 = np.delete(p[:,b], a, 0)
+    #print(calc_beta(o1, f2, e2))
 
+    print(smab(state, -1000, 1000, 1))
     print('done')
