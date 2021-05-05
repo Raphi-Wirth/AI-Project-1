@@ -346,8 +346,8 @@ def smab(state, lower, upper, depth):
     if depth == 0:
         return solve_game(state.payoff_matrix())
     actions = state.actions()
-    p = [[-1]*state.lower_actions_count]*state.upper_actions_count
-    o = [[1]*state.lower_actions_count]*state.upper_actions_count
+    p = np.matrix([[-1]*state.lower_actions_count]*state.upper_actions_count)
+    o = np.matrix([[1]*state.lower_actions_count]*state.upper_actions_count)
     dominated_rows = []
     dominated_cols = []
     for a in range(state.upper_actions_count):
@@ -356,9 +356,19 @@ def smab(state, lower, upper, depth):
             if a not in dominated_rows \
                     and b not in dominated_cols:
                 # Find LP for a
-                alpha = 0
+                # TODO: Add alpha row
+                a_p = np.delete(np.delete(p, [b] + dominated_cols, 1), [a] + dominated_rows, 0)
+                a_e = np.delete(p[:,b], [a] + dominated_rows, 0)
+                a_f = np.delete(o[a], [b] + dominated_cols, 1)
+                alpha = calc_alpha(a_p, a_f, a_e)
+
                 # Find LP for b
-                beta = 0
+                # TODO: Add beta col
+                b_o = np.delete(np.delete(o, [b] + dominated_cols, 1), [a] + dominated_rows, 0)
+                b_e = np.delete(o[a], [b] + dominated_cols, 1)
+                b_f = np.delete(p[:,b], [a] + dominated_rows, 0)
+                beta = calc_beta(b_o, b_f, b_e)
+
                 successor = state.successor(action)
                 if alpha >= beta:
                     v = smab(successor, alpha, alpha+0.01, depth-1)
@@ -374,9 +384,11 @@ def smab(state, lower, upper, depth):
                         dominated_cols.append(b)
                     else:
                         # p = o = v
-                        pass
+                        p[a,b] = v
+                        o[a,b] = v
     # Return solve_game with dominated actions removed
-    return 0
+    restricted_payoff_matrix = np.delete(np.delete(state.payoff_matrix(), dominated_cols, 1), dominated_rows, 0)
+    return solve_game(restricted_payoff_matrix)
 
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
