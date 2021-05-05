@@ -316,20 +316,20 @@ def maximin(state, depth, player_type):
 # Works if f and e are row vectors
 def calc_alpha(p, f, e):
     c = -e
-    A_ub = -p
+    A_ub = -p.T
     b_ub = -f
-    A_eq = np.ones((5,1))
+    A_eq = np.matrix([1] * len(c))
     b_eq = [1]
     return opt.linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, 
-        b_eq=b_eq, bounds=(0,1)).x[0]
+        b_eq=b_eq, bounds=(0,1)).fun * -1.0
 
 # Calculates beta bound
 # Works if f and e are row vectors
 def calc_beta(o, f, e):
-    c = e
+    c = e.T
     A_ub = o
     b_ub = f
-    A_eq = np.ones((5,1))
+    A_eq = np.matrix([1] * len(c))
     b_eq = [1]
     return opt.linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, 
         b_eq=b_eq, bounds=(0,1)).x[0]
@@ -384,10 +384,22 @@ if __name__ == "__main__":
     state = State.new(upper_tokens, lower_tokens, ALL_HEXES, 0, 0)
     state.print()
     
-    p = np.array([[1]*state.lower_actions_count]*state.upper_actions_count)
-    o = np.array([[1]*state.lower_actions_count]*state.upper_actions_count)
+    p = np.matrix([[-1]*state.lower_actions_count]*state.upper_actions_count)
+    o = np.matrix([[1]*state.lower_actions_count]*state.upper_actions_count)
+    #print(p)
+    #print(o)
     # calculate alpha for (a,b) = (2,1)
-    print(p)
-    print(np.delete(p, 1, 0))
+    #p = np.matrix('0 1; 2 3; 4 5; 6 7')
+    #o = np.matrix('0 1; 2 3; 4 5; 6 7')
+    a = 2
+    b = 1
+    p1 = np.delete(np.delete(p, b, 1), a, 0)
+    o1 = np.delete(np.delete(o, b, 1), a, 0)
+    e1 = np.delete(p[:,b], a, 0)
+    f1 = np.delete(o[a], b, 1)
+    #print(calc_alpha(p1, f, e))
+    e2 = np.delete(o[a], b, 1)
+    f2 = np.delete(p[:,b], a, 0)
+    print(calc_beta(o1, f2, e2))
 
     print('done')
