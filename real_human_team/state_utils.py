@@ -3,9 +3,10 @@ import typing
 import itertools
 import collections
 import numpy as np
+import scipy.optimize as opt
 
-from real_human_team.util import print_board
-from real_human_team.gametheory import solve_game
+from util import print_board
+from gametheory import solve_game
 
 class State:
     # Note: By subclassing namedtuple, we get efficient, immutable instances
@@ -25,6 +26,7 @@ class State:
     # Information about how many actions one can take
     upper_actions_count = 0
     lower_actions_count = 0
+    actions_list = []
     
     # When subclassing namedtuple, we should control creation of instances
     # using a separate classmethod, rather than overriding __init__.
@@ -55,6 +57,7 @@ class State:
         self.all_hexes = all_hexes
         self.upper_throws = upper_throws
         self.lower_throws = lower_throws
+        self.actions_list = list(self.actions())
 
     # The core functionality of the state is to compute its available
     # actions and their corresponding successor states.
@@ -293,6 +296,7 @@ def heuristic(state):
     return heuristic
 
 def min_ev(state, rowplayer):
+    #print(len((solve_game(np.array(state.payoff_matrix()), rowplayer, rowplayer)[0])))
     return solve_game(np.array(state.payoff_matrix()), rowplayer, rowplayer)[1]
 
 def maximin(state, depth, player_type):
@@ -308,12 +312,82 @@ def maximin(state, depth, player_type):
     # Return maximum of the min ev's
     return max([maximin(successor, depth-1, player_type) for successor in new_states])
 
+# Calculates alpha bound 
+# Works if f and e are row vectors
+def calc_alpha(p, f, e):
+    c = -e
+    A_ub = -p
+    b_ub = -f
+    A_eq = np.ones((5,1))
+    b_eq = [1]
+    return opt.linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, 
+        b_eq=b_eq, bounds=(0,1)).x[0]
+
+# Calculates beta bound
+# Works if f and e are row vectors
+def calc_beta(o, f, e):
+    c = e
+    A_ub = o
+    b_ub = f
+    A_eq = np.ones((5,1))
+    b_eq = [1]
+    return opt.linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, 
+        b_eq=b_eq, bounds=(0,1)).x[0]
+
+def print_test(state):
+    actions = list(state.actions())
+    for a in range(state.upper_actions_count):
+        for b in range(state.lower_actions_count):
+            action = actions[a * state.lower_actions_count + b]
+            print(f"A: {action[0]}, B: {action[1]}")
+
+# Simultaneous Move Alpha Beta Algorithm
+def smab(state, lower, upper, depth):
+    if depth == 0:
+        return solve_game(state.payoff_matrix())
+    actions = state.actions()
+    p = [[-1]*state.lower_actions_count]*state.upper_actions_count
+    o = [[1]*state.lower_actions_count]*state.upper_actions_count
+    dominated_rows = []
+    dominated_cols = []
+    for a in range(state.upper_actions_count):
+        for b in range(state.lower_actions_count):
+            action = actions[a * state.lower_actions_count + b]
+            if a not in dominated_rows \
+                    and b not in dominated_cols:
+                # Find LP for a
+                alpha = 0
+                # Find LP for b
+                beta = 0
+                successor = state.successor(action)
+                if alpha >= beta:
+                    v = smab(successor, alpha, alpha+0.01, depth-1)
+                    if v <= alpha:
+                        dominated_rows.append(a)
+                    else:
+                        dominated_cols.append(b)
+                else:
+                    v = smab(successor, alpha, beta ,depth-1)
+                    if v <= alpha:
+                        dominated_rows.append(a)
+                    elif v >= beta:
+                        dominated_cols.append(b)
+                    else:
+                        # p = o = v
+                        pass
+    # Return solve_game with dominated actions removed
+    return 0
+
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
     upper_tokens = (Token(Hex(2,1), 'r'),Token(Hex(3,1), 'r'),)
     state = State.new(upper_tokens, lower_tokens, ALL_HEXES, 0, 0)
     state.print()
-    print(state.payoff_matrix())
-    print(min_ev(state))
-    print(maximin(state,1))
+    
+    p = np.array([[1]*state.lower_actions_count]*state.upper_actions_count)
+    o = np.array([[1]*state.lower_actions_count]*state.upper_actions_count)
+    # calculate alpha for (a,b) = (2,1)
+    print(p)
+    print(np.delete(p, 1, 0))
+
     print('done')
