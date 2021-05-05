@@ -5,6 +5,7 @@ import collections
 import numpy as np
 import scipy.optimize as opt
 import math
+import random
 
 from util import print_board
 from gametheory import solve_game
@@ -232,7 +233,8 @@ class State:
             else:
                 col_index[lower_action] = col_count
                 col_count+=1
-            matrix[row][col] = heuristic(successor)-heuristic(self)
+            #matrix[row][col] = heuristic(successor)-heuristic(self)
+            matrix[row][col] = random.randint(-4,4)
         return matrix
 
     # For easier debugging, a helper method to print the current state.
@@ -320,7 +322,7 @@ def calc_alpha(p, f, e):
     A_eq = np.matrix([1] * len(c))
     b_eq = [1]
     return opt.linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, 
-        b_eq=b_eq, bounds=(0,1)).fun * -1.0
+        b_eq=b_eq, bounds=(0,1)).fun * -1
 
 # Calculates beta bound
 # Works if f and e are row vectors
@@ -349,8 +351,8 @@ def smab(state, lower, upper, depth):
 
     # Setup optimistic, pessimistic and other variables
     actions = list(state.actions())
-    p = np.matrix([[-1]*state.lower_actions_count]*state.upper_actions_count)
-    o = np.matrix([[1]*state.lower_actions_count]*state.upper_actions_count)
+    p = np.matrix([[-4]*state.lower_actions_count]*state.upper_actions_count)
+    o = np.matrix([[4]*state.lower_actions_count]*state.upper_actions_count)
     dominated_rows = []
     dominated_cols = []
 
