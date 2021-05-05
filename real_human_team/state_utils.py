@@ -209,32 +209,17 @@ class State:
     
     # Generate payoff matrix of this state
     def payoff_matrix(self):
-        act_suc = [(action, successor) for action, successor in self.actions_successors()]
+        actions = list(self.actions())
         row_index = {}
         col_index = {}
         row_count = 0
         col_count = 0
         matrix = [[0]*self.lower_actions_count]*self.upper_actions_count
-        for action, successor in act_suc:
-            row = 0
-            col = 0
-            for p, act in action:
-                if p == 'u':
-                    upper_action = act
-                if p == 'l':
-                    lower_action = act
-            if upper_action in row_index.keys():
-                row = row_index[upper_action]
-            else:
-                row_index[upper_action] = row_count
-                row_count+=1
-            if lower_action in col_index.keys():
-                col = col_index[lower_action]
-            else:
-                col_index[lower_action] = col_count
-                col_count+=1
-            #matrix[row][col] = heuristic(successor)-heuristic(self)
-            matrix[row][col] = random.randint(-4,4)
+        for a in range(self.upper_actions_count):
+            for b in range(self.lower_actions_count):
+                action = actions[a * self.lower_actions_count + b]
+                successor = self.successor(action)
+                matrix[a][b] = heuristic(self, successor)
         return matrix
 
     # For easier debugging, a helper method to print the current state.
@@ -287,13 +272,19 @@ class Token(typing.NamedTuple):
     hex:    Hex
     symbol: str
 
-def heuristic(state):
+def heuristic(state, successor):
     heuristic = 0
-    for upper in state.upper_tokens:
-        for lower in state.lower_tokens:
-            #print(upper.symbol, lower.symbol)
-            if (upper.symbol == BEATS_WHAT[lower.symbol]):
-                heuristic += Hex.dist(upper.hex, lower.hex)
+    if len(state.upper_tokens) < len(successor.upper_tokens):
+        heuristic = 1
+    elif len(state.upper_tokens) > len(successor.upper_tokens):
+        heuristic = -1
+    else :
+        heuristic = 0
+    # for upper in state.upper_tokens:
+    #     for lower in state.lower_tokens:
+    #         #print(upper.symbol, lower.symbol)
+    #         if (upper.symbol == BEATS_WHAT[lower.symbol]):
+    #             heuristic += Hex.dist(upper.hex, lower.hex)
     return heuristic
 
 def min_ev(state, rowplayer):
@@ -351,8 +342,8 @@ def smab(state, lower, upper, depth):
 
     # Setup optimistic, pessimistic and other variables
     actions = list(state.actions())
-    p = np.matrix([[-4]*state.lower_actions_count]*state.upper_actions_count)
-    o = np.matrix([[4]*state.lower_actions_count]*state.upper_actions_count)
+    p = np.matrix([[-1]*state.lower_actions_count]*state.upper_actions_count)
+    o = np.matrix([[1]*state.lower_actions_count]*state.upper_actions_count)
     dominated_rows = []
     dominated_cols = []
 
@@ -424,5 +415,5 @@ if __name__ == "__main__":
     # f2 = np.delete(p[:,b], a, 0)
     #print(calc_beta(o1, f2, e2))
 
-    print(smab(state, -1000, 1000, 1))
+    print(smab(state, -100, 100, 1))
     print('done')
