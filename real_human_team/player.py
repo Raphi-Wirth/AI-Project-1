@@ -1,4 +1,9 @@
 from state_utils import *
+<<<<<<< Updated upstream
+=======
+import math
+import random
+>>>>>>> Stashed changes
 
 class Player:
     thrown_tokens = 0
@@ -50,12 +55,22 @@ class Player:
     
 def minmax(state):
     originalState = state
-    allActions = state.actions()
+    allActions = list(state.actions())
     allHeuristics = []
+    initialHeuristics = []
     player = Player('u')
+    for i in allActions:
+        testingState = state.successor(i)
+        initialHeuristics.append(player.calcStateHeuristic(testingState.upper_tokens,testingState.lower_tokens))
+    minHeuristic = min(initialHeuristics)
+    maxHeuristic = max(initialHeuristics)
+    print(minHeuristic, maxHeuristic)
     count = 0
     for action in allActions:
         testingState = state.successor(action)
+        if (player.calcStateHeuristic(testingState.upper_tokens, testingState.lower_tokens) >= 0.5*maxHeuristic
+        or player.calcStateHeuristic(testingState.upper_tokens, testingState.lower_tokens) <= 0.5*minHeuristic):
+            continue
         allNextActions = testingState.actions()
         currentHeuristics = []
         for secondAction in allNextActions:
@@ -65,9 +80,9 @@ def minmax(state):
         currentHeuristics.sort(key = lambda tup: tup[0])
         allHeuristics.append((action,currentHeuristics[-1]))
     allHeuristics.sort(key = lambda tup : tup[1][0])
-    state = state.successor(allHeuristics[-1][0])
-    print(allHeuristics[-1][0])
+    print(allHeuristics)
     print(allHeuristics[-1][1][1])
+    state = state.successor(allHeuristics[-1][0])
     state = state.successor(allHeuristics[-1][1][1])
     state.print()
     return state
@@ -76,7 +91,15 @@ def minmax(state):
 if __name__ == "__main__":
     lower_tokens = (Token(Hex(0,1), 'r'),)
     upper_tokens = (Token(Hex(2,1), 's'),)
+<<<<<<< Updated upstream
     state = State.new(upper_tokens, lower_tokens, ALL_HEXES, 0, 0)
     state = minmax(state)
     minmax(state)
+=======
+    state = State.new([], [], ALL_HEXES, 0, 0)
+    player = Player('upper')
+    minmax(state)
+    #print(player.player_type)
+    #print(player.action())
+>>>>>>> Stashed changes
 
