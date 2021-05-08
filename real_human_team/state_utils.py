@@ -222,6 +222,14 @@ class State:
                 matrix[a][b] = heuristic(self, successor)
         return matrix
 
+    def predicted_value(self):
+        if len(self.upper_tokens) > len(self.lower_tokens):
+            return 1
+        elif len(self.upper_tokens) == len(self.lower_tokens):
+            return 0
+        else:
+            return -1
+
     # For easier debugging, a helper method to print the current state.
     def print(self, message="", **kwargs):
         board = collections.defaultdict(str)
@@ -313,7 +321,7 @@ def calc_alpha(p, f, e):
     A_eq = np.matrix([1] * len(c))
     b_eq = [1]
     return opt.linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, 
-        b_eq=b_eq, bounds=(0,1)).fun * -1
+        b_eq=b_eq, bounds=(0,1)).fun * -1.0
 
 # Calculates beta bound
 # Works if f and e are row vectors
@@ -338,7 +346,7 @@ def smab(state, lower, upper, depth):
     # Base case
     # TODO: Add in base case when goal state has been reached
     if depth == 0:
-        return solve_game(state.payoff_matrix())
+        return [123,state.predicted_value()]
 
     # Setup optimistic, pessimistic and other variables
     actions = list(state.actions())
@@ -369,6 +377,9 @@ def smab(state, lower, upper, depth):
                 b_e = np.delete(np.append(o[a], [[upper]], 1), [b] + dominated_cols, 1)
                 b_f = np.delete(p[:,b], [a] + dominated_rows, 0)
                 beta = calc_beta(b_o, b_f, b_e)
+
+                #print(alpha)
+                #print(beta)
 
                 successor = state.successor(action)
                 if alpha >= beta:
@@ -415,5 +426,5 @@ if __name__ == "__main__":
     # f2 = np.delete(p[:,b], a, 0)
     #print(calc_beta(o1, f2, e2))
 
-    print(smab(state, -100, 100, 1))
+    print(smab(state, -2, 2, 2))
     print('done')
