@@ -28,7 +28,8 @@ class Player:
         of the game, select an action to play this turn.
         """
         # put your code here
-        return determineOptimalMove(self.currentState, 2, self.player_type[0], -math.inf, math.inf, True)[0][1]
+        a = determineOptimalMove(self.currentState, 2, self.player_type[0], -math.inf, math.inf, True)
+        return a[0][1]
     
     def update(self, opponent_action, player_action):
         """
