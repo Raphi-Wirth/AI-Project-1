@@ -38,48 +38,49 @@ class Player:
         and player_action is this instance's latest chosen action.
         """
         # put your code here
-    
-    def calcStateHeuristic(self, upperTokens, lowerTokens):
-        # define hex weights
-        hexWeights = [((0,0), 0), ((0, -1), 0), ((0, 1), 0),
-                      ((0, 2), 0), ((0, -2), 0),
-                      ((0, 3), 0), ((0, -3), 0), ((0, 4), 0),
-                      ((0, -4), 0), ((-1, 0), 40), ((-1, 1), 40),
-                      ((-1, -1), 30), ((-1, -2), 25), ((-1, 2), 30),
-                      ((-1, 3), 25), ((-1, -3), 20),
-                      ((-1, 4), 10), ((-2, 0), 30), ((-2, 1), 30),
-                      ((-2, 2), 30), ((-2, -1), 25), ((-2, 3), 25),
-                      ((-2, -2), 20), ((-2, 4), 25), ((-3, 0), 25),
-                      ((-3, 1), 25), ((-3, 2), 25), ((-3, 3), 25),
-                      ((-3, -1), 20), ((-3, 4), 20), ((-4, 0), 20),
-                      ((-4, 1), 20), ((-4, 2), 20), ((-4, 3), 20), 
-                      ((-4, 4), 20), ((1, -1), -40), ((1, 0), -40),
-                      ((1, -2), -30), ((1, 1), -30), ((1, -3), -25),
-                      ((1, 2), -25), ((1, -4), -20), ((1, 3), -20),
-                      ((2, 0), -30), ((2, -1), -30), ((2, -2), -30),
-                      ((2, -3), -25), ((2, 1), -25), ((2, -4), -20),
-                      ((2, 2), -20), ((3, 0), -25), ((3, -1), -25),
-                      ((3, -2), -25), ((3, -3), -25), ((3, -4), -20),
-                      ((3, 1), -20), ((4, 0), -20), ((4, -1), -20),
-                      ((4, -2), -20), ((4, -3), -20), ((4, -4), -20)]
 
-        # loop through upper and lower tokens  (upper tokens positive, lower negative)
-        evaluation = 0
-        for upper in upperTokens:
-            # look up token in weights
-            for h, weight in hexWeights:
-                if upper.hex == h:
-                    evaluation += weight
-        for lower in lowerTokens:
-            for h, weight in hexWeights:
-                if lower.hex == h:
-                    evaluation -= -weight
-        return evaluation
+
+# Calculate evaluation function (moved outside of player class)
+def calcStateHeuristic(state, player):
+    # define hex weights
+    hexWeights = [((0,0), 50), ((0, -1), 40), ((0, 1), 40),
+                    ((0, 2), 30), ((0, -2), 30),
+                    ((0, 3), 25), ((0, -3), 25), ((0, 4), 20),
+                    ((0, -4), 20), ((-1, 0), 40), ((-1, 1), 40),
+                    ((-1, -1), 30), ((-1, -2), 25), ((-1, 2), 30),
+                    ((-1, 3), 25), ((-1, -3), 20),
+                    ((-1, 4), 10), ((-2, 0), 30), ((-2, 1), 30),
+                    ((-2, 2), 30), ((-2, -1), 25), ((-2, 3), 25),
+                    ((-2, -2), 20), ((-2, 4), 25), ((-3, 0), 25),
+                    ((-3, 1), 25), ((-3, 2), 25), ((-3, 3), 25),
+                    ((-3, -1), 20), ((-3, 4), 20), ((-4, 0), 20),
+                    ((-4, 1), 20), ((-4, 2), 20), ((-4, 3), 20), 
+                    ((-4, 4), 20), ((1, -1), 40), ((1, 0), 40),
+                    ((1, -2), 30), ((1, 1), 30), ((1, -3), 25),
+                    ((1, 2), 25), ((1, 4), -20), ((1, 3), 20),
+                    ((2, 0), 30), ((2, -1), 30), ((2, -2), 30),
+                    ((2, -3), 25), ((2, 1), 25), ((2, -4), 20),
+                    ((2, 2), 20), ((3, 0), 25), ((3, -1), 25),
+                    ((3, -2), 25), ((3, -3), 25), ((3, -4), 20),
+                    ((3, 1), 20), ((4, 0), 20), ((4, -1), 20),
+                    ((4, -2), 20), ((4, -3), 20), ((4, -4), 20)]
+
+    # loop through upper and lower tokens  (upper tokens positive, lower negative)
+    evaluation = 0
+    for upper in state.upper_tokens:
+        # look up token in weights
+        for h, weight in hexWeights:
+            if upper.hex == h:
+                evaluation += weight
+    for lower in state.lower_tokens:
+        for h, weight in hexWeights:
+            if lower.hex == h:
+                evaluation -= weight
+    return evaluation * (1 if player == 0 else -1)
     
 #Code taken from https://www.youtube.com/watch?v=l-hh51ncgDI&ab_channel=SebastianLague
 
 def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
-    _player = Player('u')
     allActions = list(state.actions())
     if(player == 0):
         dummy = allActions[0][0]
@@ -97,18 +98,14 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
     
 
     if depth == 0:
-        if(player==0):
-            return (dummy, _player.calcStateHeuristic(state.upper_tokens, state.lower_tokens))
-        if(player==1):
-            return (dummy, _player.calcStateHeuristic(state.lower_tokens, state.upper_tokens))
+        return (dummy, calcStateHeuristic(state, player))
     
     if maximisingPlayer:
         maxEval = -math.inf
         if(player == 0):
             for action in allUpActions:
-                transState = state.successor((action,dummy)) 
-                newState = State.new(transState.upper_tokens, state.lower_tokens, ALL_HEXES, transState.upper_throws, state.lower_throws)
-                eval = determineOptimalMove(newState, depth-1, player+1, alpha, beta, False)
+                transState = state.successor((action,)) 
+                eval = determineOptimalMove(transState, depth-1, player+1, alpha, beta, False)
                 if(eval[1] > maxEval):
                     maxEval = eval[1]
                     maxAction = action
@@ -117,9 +114,8 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
             return (maxAction, maxEval)
         else:
             for action in allLowerActions:
-                transState = state.successor((dummy, action)) 
-                newState = State.new(state.upper_tokens, transState.lower_tokens, ALL_HEXES, state.upper_throws, transState.lower_throws)
-                eval = determineOptimalMove(newState, depth-1, player-1, alpha, beta, False)
+                transState = state.successor((action,)) 
+                eval = determineOptimalMove(transState, depth-1, player-1, alpha, beta, False)
                 if(eval[1]>maxEval):
                     maxEval = eval[1]
                     maxAction = action
@@ -131,9 +127,8 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
         minEval = math.inf
         if(player == 0):
             for action in allUpActions:
-                transState = state.successor((action,dummy)) 
-                newState = State.new(transState.upper_tokens, state.lower_tokens, ALL_HEXES, transState.upper_throws, state.lower_throws)
-                eval = determineOptimalMove(newState, depth-1, player+1, alpha, beta, True)
+                transState = state.successor((action,)) 
+                eval = determineOptimalMove(transState, depth-1, player+1, alpha, beta, True)
                 if(eval[1]<minEval):
                     minEval = eval[1]
                     minAction = action
@@ -142,9 +137,8 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
             return (minAction, minEval)
         if(player == 1):
             for action in allLowerActions:
-                transState = state.successor((dummy, action)) 
-                newState = State.new(state.upper_tokens, transState.lower_tokens, ALL_HEXES, state.upper_throws, transState.lower_throws)
-                eval = determineOptimalMove(newState, depth-1, player-1, alpha, beta, True)
+                transState = state.successor((action,)) 
+                eval = determineOptimalMove(transState, depth-1, player-1, alpha, beta, True)
                 if(eval[1]<minEval):
                     minEval = eval[1]
                     minAction = action
@@ -158,7 +152,7 @@ if __name__ == "__main__":
     lower_tokens = []
     upper_tokens = []
     state = State.new(lower_tokens, upper_tokens, ALL_HEXES, 0, 0)
-    for i in range(2):
+    for i in range(3):
         upperMove = determineOptimalMove(state, 2, 0, 0,0, True)
         lowerMove = determineOptimalMove(state, 2, 1, 0,0, True)
         print(upperMove[0])
