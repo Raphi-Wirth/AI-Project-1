@@ -41,7 +41,7 @@ class Player:
 
 
 # Calculate evaluation function (moved outside of player class)
-def calcStateHeuristic(state, player):
+def calcStateHeuristic(state, player, opponent):
     # define hex weights
     hexWeights = [((0,0), 50), ((0, -1), 40), ((0, 1), 40),
                     ((0, 2), 30), ((0, -2), 30),
@@ -67,22 +67,38 @@ def calcStateHeuristic(state, player):
 
     # loop through upper and lower tokens  (upper tokens positive, lower negative)
     evaluation = 0
-    for upper in state.upper_tokens:
-        # look up token in weights
-        for h, weight in hexWeights:
-            if upper.hex == h:
-                evaluation += weight
-    for lower in state.lower_tokens:
-        for h, weight in hexWeights:
-            if lower.hex == h:
-                evaluation -= weight
-    return evaluation * (1 if player == 0 else -1)
+    if player == 'u':
+        for upper in state.upper_tokens:
+            # look up token in weights
+            for h, weight in hexWeights:
+                if upper.hex == h:
+                    evaluation += weight
+            for lower in state.lower_tokens:
+               if WHAT_BEATS[upper.symbol] == lower.symbol:
+                   # look up token in weights
+                    for h, weight in hexWeights:
+                        if lower.hex == h:
+                            evaluation -= weight
+            
+    if player == 'l':
+        for lower in state.lower_tokens:
+            # look up token in weights
+            for h, weight in hexWeights:
+                if lower.hex == h:
+                    evaluation += weight
+            for upper in state.upper_tokens:
+               if WHAT_BEATS[lower.symbol] == upper.symbol:
+                   # look up token in weights
+                    for h, weight in hexWeights:
+                        if upper.hex == h:
+                            evaluation -= weight
+    return evaluation * (-1 if opponent else 1)
     
 #Code taken from https://www.youtube.com/watch?v=l-hh51ncgDI&ab_channel=SebastianLague
 
 def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
     allActions = list(state.actions())
-    if(player == 0):
+    if(player == 'u'):
         allUpActions = state.genUpActions()
         dummy = allUpActions[0]
     else:
@@ -92,14 +108,14 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
     heuristics = []
 
     if depth == 0:
-        return (dummy, calcStateHeuristic(state, player))
+        return (dummy, calcStateHeuristic(state, player, not maximisingPlayer))
     
     if maximisingPlayer:
         maxEval = -math.inf
-        if(player == 0):
+        if(player == 'u'):
             for action in allUpActions:
                 transState = state.successor((action,)) 
-                eval = determineOptimalMove(transState, depth-1, player+1, alpha, beta, False)
+                eval = determineOptimalMove(transState, depth-1, 'l', alpha, beta, False)
                 if(eval[1] > maxEval):
                     maxEval = eval[1]
                     maxAction = action
@@ -112,7 +128,7 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
         else:
             for action in allLowerActions:
                 transState = state.successor((action,)) 
-                eval = determineOptimalMove(transState, depth-1, player-1, alpha, beta, False)
+                eval = determineOptimalMove(transState, depth-1, 'u', alpha, beta, False)
                 if(eval[1]>maxEval):
                     maxEval = eval[1]
                     maxAction = action
@@ -125,10 +141,10 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
     
     else:
         minEval = math.inf
-        if(player == 0):
+        if(player == 'u'):
             for action in allUpActions:
                 transState = state.successor((action,)) 
-                eval = determineOptimalMove(transState, depth-1, player+1, alpha, beta, True)
+                eval = determineOptimalMove(transState, depth-1, 'l', alpha, beta, True)
                 if(eval[1]<minEval):
                     minEval = eval[1]
                     minAction = action
@@ -138,10 +154,10 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
             #print("Min")
             #print(action, minEval)
             return (minAction, minEval)
-        if(player == 1):
+        else:
             for action in allLowerActions:
                 transState = state.successor((action,)) 
-                eval = determineOptimalMove(transState, depth-1, player-1, alpha, beta, True)
+                eval = determineOptimalMove(transState, depth-1, 'u', alpha, beta, True)
                 if(eval[1]<minEval):
                     minEval = eval[1]
                     minAction = action
@@ -158,9 +174,9 @@ if __name__ == "__main__":
     lower_tokens = []
     upper_tokens = []
     state = State.new(lower_tokens, upper_tokens, ALL_HEXES, 0, 0)
-    for i in range(8):
-        upperMove = determineOptimalMove(state, 3, 0, -math.inf, math.inf, True)
-        lowerMove = determineOptimalMove(state, 3, 1, -math.inf, math.inf, True)
+    for i in range(12):
+        upperMove = determineOptimalMove(state, 3, 'u', -math.inf, math.inf, True)
+        lowerMove = determineOptimalMove(state, 3, 'l', -math.inf, math.inf, True)
         print(upperMove[0])
         print(lowerMove[0])
         state = state.successor((upperMove[0],lowerMove[0]))
