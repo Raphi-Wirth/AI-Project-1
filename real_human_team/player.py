@@ -40,18 +40,41 @@ class Player:
         # put your code here
     
     def calcStateHeuristic(self, upperTokens, lowerTokens):
-        offensiveHeuristicValue = 0
-        defensiveHeuristicValue = 0
-        for upperToken in upperTokens:
-            for lowerToken in lowerTokens:
-                if (lowerToken.symbol == BEATS_WHAT[upperToken.symbol]):
-                    defensiveHeuristicValue += Hex.dist(upperToken.hex, lowerToken.hex)*self.defensiveHeuristicWeight
-                elif (upperToken.symbol == BEATS_WHAT[lowerToken.symbol]):
-                    offensiveHeuristicValue += Hex.dist(upperToken.hex, lowerToken.hex)*self.offensiveHeuristicWeight
-        if defensiveHeuristicValue>100:
-            defensiveHeuristicValue = 100
-        offensiveHeuristicValue = 8*len(lower_tokens) - offensiveHeuristicValue
-        return (offensiveHeuristicValue + defensiveHeuristicValue)
+        # define hex weights
+        hexWeights = [((0,0), 0), ((0, -1), 0), ((0, 1), 0),
+                      ((0, 2), 0), ((0, -2), 0),
+                      ((0, 3), 0), ((0, -3), 0), ((0, 4), 0),
+                      ((0, -4), 0), ((-1, 0), 40), ((-1, 1), 40),
+                      ((-1, -1), 30), ((-1, -2), 25), ((-1, 2), 30),
+                      ((-1, 3), 25), ((-1, -3), 20),
+                      ((-1, 4), 10), ((-2, 0), 30), ((-2, 1), 30),
+                      ((-2, 2), 30), ((-2, -1), 25), ((-2, 3), 25),
+                      ((-2, -2), 20), ((-2, 4), 25), ((-3, 0), 25),
+                      ((-3, 1), 25), ((-3, 2), 25), ((-3, 3), 25),
+                      ((-3, -1), 20), ((-3, 4), 20), ((-4, 0), 20),
+                      ((-4, 1), 20), ((-4, 2), 20), ((-4, 3), 20), 
+                      ((-4, 4), 20), ((1, -1), -40), ((1, 0), -40),
+                      ((1, -2), -30), ((1, 1), -30), ((1, -3), -25),
+                      ((1, 2), -25), ((1, -4), -20), ((1, 3), -20),
+                      ((2, 0), -30), ((2, -1), -30), ((2, -2), -30),
+                      ((2, -3), -25), ((2, 1), -25), ((2, -4), -20),
+                      ((2, 2), -20), ((3, 0), -25), ((3, -1), -25),
+                      ((3, -2), -25), ((3, -3), -25), ((3, -4), -20),
+                      ((3, 1), -20), ((4, 0), -20), ((4, -1), -20),
+                      ((4, -2), -20), ((4, -3), -20), ((4, -4), -20)]
+
+        # loop through upper and lower tokens  (upper tokens positive, lower negative)
+        evaluation = 0
+        for upper in upperTokens:
+            # look up token in weights
+            for h, weight in hexWeights:
+                if upper.hex == h:
+                    evaluation += weight
+        for lower in lowerTokens:
+            for h, weight in hexWeights:
+                if lower.hex == h:
+                    evaluation -= -weight
+        return evaluation
     
 #Code taken from https://www.youtube.com/watch?v=l-hh51ncgDI&ab_channel=SebastianLague
 
@@ -136,8 +159,8 @@ if __name__ == "__main__":
     upper_tokens = []
     state = State.new(lower_tokens, upper_tokens, ALL_HEXES, 0, 0)
     for i in range(2):
-        upperMove = determineOptimalMove(state, 4, 0, True)
-        lowerMove = determineOptimalMove(state, 4, 1, True)
+        upperMove = determineOptimalMove(state, 2, 0, 0,0, True)
+        lowerMove = determineOptimalMove(state, 2, 1, 0,0, True)
         print(upperMove[0])
         print(lowerMove[0])
         state = state.successor((upperMove[0],lowerMove[0]))
