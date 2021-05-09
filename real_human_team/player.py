@@ -83,19 +83,13 @@ def calcStateHeuristic(state, player):
 def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
     allActions = list(state.actions())
     if(player == 0):
-        dummy = allActions[0][0]
+        allUpActions = state.genUpActions()
+        dummy = allUpActions[0]
     else:
-        dummy = allActions[0][1]
-    allUpActions = []
-    allLowerActions = []
-    for action in allActions:
-        allUpActions.append(action[0])
-        allLowerActions.append(action[1])
-    allUpActions = list(dict.fromkeys(allUpActions))
-    allLowerActions = list(dict.fromkeys(allLowerActions))
+        allLowerActions = state.genLowerActions()
+        dummy = allLowerActions[0]
+    
     heuristics = []
-    
-    
 
     if depth == 0:
         return (dummy, calcStateHeuristic(state, player))
@@ -109,6 +103,9 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
                 if(eval[1] > maxEval):
                     maxEval = eval[1]
                     maxAction = action
+                alpha = max(alpha, eval[1])
+                if(beta <= alpha):
+                    break
             #print("Max")
             #print(action, maxEval)
             return (maxAction, maxEval)
@@ -119,6 +116,9 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
                 if(eval[1]>maxEval):
                     maxEval = eval[1]
                     maxAction = action
+                alpha = max(alpha, eval[1])
+                if(beta <= alpha):
+                    break
             #print("Max")
             #print(action, maxEval)
             return (maxAction, maxEval)
@@ -132,6 +132,9 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
                 if(eval[1]<minEval):
                     minEval = eval[1]
                     minAction = action
+                beta = min(beta, eval[1])
+                if(beta <= alpha):
+                    break
             #print("Min")
             #print(action, minEval)
             return (minAction, minEval)
@@ -142,6 +145,9 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
                 if(eval[1]<minEval):
                     minEval = eval[1]
                     minAction = action
+                beta = min(beta, eval[1])
+                if(beta <= alpha):
+                    break
             #print("Min")
             #print(action, minEval)
             return (minAction, minEval)
@@ -152,9 +158,9 @@ if __name__ == "__main__":
     lower_tokens = []
     upper_tokens = []
     state = State.new(lower_tokens, upper_tokens, ALL_HEXES, 0, 0)
-    for i in range(3):
-        upperMove = determineOptimalMove(state, 2, 0, 0,0, True)
-        lowerMove = determineOptimalMove(state, 2, 1, 0,0, True)
+    for i in range(8):
+        upperMove = determineOptimalMove(state, 3, 0, -math.inf, math.inf, True)
+        lowerMove = determineOptimalMove(state, 3, 1, -math.inf, math.inf, True)
         print(upperMove[0])
         print(lowerMove[0])
         state = state.successor((upperMove[0],lowerMove[0]))
