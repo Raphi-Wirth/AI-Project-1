@@ -100,9 +100,11 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
     allActions = list(state.actions())
     if(player == 'u'):
         allUpActions = state.genUpActions()
+        random.shuffle(allUpActions)
         dummy = allUpActions[0]
     else:
         allLowerActions = state.genLowerActions()
+        random.shuffle(allLowerActions)
         dummy = allLowerActions[0]
     
     heuristics = []
@@ -175,8 +177,8 @@ if __name__ == "__main__":
     upper_tokens = []
     state = State.new(lower_tokens, upper_tokens, ALL_HEXES, 0, 0)
     for i in range(12):
-        upperMove = determineOptimalMove(state, 3, 'u', -math.inf, math.inf, True)
-        lowerMove = determineOptimalMove(state, 3, 'l', -math.inf, math.inf, True)
+        upperMove = determineOptimalMove(state, 2, 'u', -math.inf, math.inf, True)
+        lowerMove = determineOptimalMove(state, 2, 'l', -math.inf, math.inf, True)
         print(upperMove[0])
         print(lowerMove[0])
         state = state.successor((upperMove[0],lowerMove[0]))
