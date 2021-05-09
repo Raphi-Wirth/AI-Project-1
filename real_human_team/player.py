@@ -28,7 +28,7 @@ class Player:
         of the game, select an action to play this turn.
         """
         # put your code here
-        a = determineOptimalMove(self.currentState, 2, self.player_type[0], -math.inf, math.inf, True)
+        a = determineOptimalMove(self.currentState, 4, self.player_type[0], -math.inf, math.inf, True)
         return a[0][1]
     
     def update(self, opponent_action, player_action):
@@ -106,16 +106,14 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
     if(player == 'u'):
         allUpActions = state.genUpActions()
         random.shuffle(allUpActions)
-        dummy = allUpActions[0]
     else:
         allLowerActions = state.genLowerActions()
         random.shuffle(allLowerActions)
-        dummy = allLowerActions[0]
     
     heuristics = []
 
     if depth == 0:
-        return (dummy, calcStateHeuristic(state, player, not maximisingPlayer))
+        return ('do nothing', calcStateHeuristic(state, player, not maximisingPlayer))
     
     if maximisingPlayer:
         maxEval = -math.inf
