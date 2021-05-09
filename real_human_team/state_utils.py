@@ -134,6 +134,7 @@ class State(typing.NamedTuple):
 
 
     def actions(self):
+        print("WE FNIOWENFNIONG\nIONDFOEWINFWEIOGN\nWEFOIOINWERGH\nIOEFNOIGN")
         """
         Generate all available 'actions' (each 'action' is actually a
         collection of actions, one for each upper token).

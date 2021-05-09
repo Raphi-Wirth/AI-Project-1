@@ -42,10 +42,8 @@ class Player:
         # put your code here
         action = (('u', player_action), ('l', opponent_action)) if self.player_type[0] == 'u' \
             else (('u', opponent_action), ('l', player_action))
-        print(action)
 
         self.currentState = self.currentState.successor(action)
-        print(self.currentState.print())
 
 
 # Calculate evaluation function (moved outside of player class)
@@ -105,7 +103,6 @@ def calcStateHeuristic(state, player, opponent):
 #Code taken from https://www.youtube.com/watch?v=l-hh51ncgDI&ab_channel=SebastianLague
 
 def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
-    allActions = list(state.actions())
     if(player == 'u'):
         allUpActions = state.genUpActions()
         random.shuffle(allUpActions)
