@@ -40,8 +40,9 @@ class Player:
         and player_action is this instance's latest chosen action.
         """
         # put your code here
-        action = (('u', player_action), ('l', opponent_action)) if self.player_type == 'u' \
+        action = (('u', player_action), ('l', opponent_action)) if self.player_type[0] == 'u' \
             else (('u', opponent_action), ('l', player_action))
+        print(action)
 
         self.currentState = self.currentState.successor(action)
         print(self.currentState.print())
