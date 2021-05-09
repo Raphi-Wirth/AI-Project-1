@@ -1,4 +1,4 @@
-from state_utils import *
+from real_human_team.state_utils import *
 import math
 import random
 
@@ -20,7 +20,7 @@ class Player:
         """
         # put your code here
         self.player_type = player
-        self.currentState = state.new([],[],state.all_hexes,0,0)
+        self.currentState = State.new([],[],ALL_HEXES,0,0)
 
     def action(self):
         """
@@ -28,6 +28,7 @@ class Player:
         of the game, select an action to play this turn.
         """
         # put your code here
+        return determineOptimalMove(self.currentState, 2, self.player_type[0], -math.inf, math.inf, True)[0][1]
     
     def update(self, opponent_action, player_action):
         """
@@ -38,6 +39,11 @@ class Player:
         and player_action is this instance's latest chosen action.
         """
         # put your code here
+        action = (('u', player_action), ('l', opponent_action)) if self.player_type == 'u' \
+            else (('u', opponent_action), ('l', player_action))
+
+        self.currentState = self.currentState.successor(action)
+        print(self.currentState.print())
 
 
 # Calculate evaluation function (moved outside of player class)

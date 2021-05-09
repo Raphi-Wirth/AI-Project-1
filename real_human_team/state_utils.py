@@ -3,7 +3,7 @@ import typing
 import itertools
 import collections
 
-from util import print_board
+from real_human_team.util import print_board
 
 class State(typing.NamedTuple):
     # Note: By subclassing namedtuple, we get efficient, immutable instances
