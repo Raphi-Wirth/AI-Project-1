@@ -50,42 +50,12 @@ class Player:
                     offensiveHeuristicValue += Hex.dist(upperToken.hex, lowerToken.hex)*self.offensiveHeuristicWeight
         if defensiveHeuristicValue>100:
             defensiveHeuristicValue = 100
-        offensiveHeuristicValue = 5*len(lower_tokens) - offensiveHeuristicValue
+        offensiveHeuristicValue = 8*len(lower_tokens) - offensiveHeuristicValue
         return (offensiveHeuristicValue + defensiveHeuristicValue)
     
-def minmax(state):
-    originalState = state
-    allActions = list(state.actions())
-    allHeuristics = []
-    initialHeuristics = []
-    player = Player('u')
-    for i in allActions:
-        testingState = state.successor(i)
-        initialHeuristics.append(player.calcStateHeuristic(testingState.upper_tokens,testingState.lower_tokens))
-    minHeuristic = min(initialHeuristics)
-    maxHeuristic = max(initialHeuristics)
-    print(minHeuristic, maxHeuristic)
-    #count = 0
-    for action in allActions:
-        testingState = state.successor(action)
-        if (player.calcStateHeuristic(testingState.upper_tokens, testingState.lower_tokens) >= 0.15*maxHeuristic
-        or player.calcStateHeuristic(testingState.upper_tokens, testingState.lower_tokens) <= 0.15*minHeuristic):
-            continue
-        allNextActions = testingState.actions()
-        currentHeuristics = []
-        for secondAction in allNextActions:
-            #count += 1
-            secondTestingState = testingState.successor(secondAction)
-            currentHeuristics.append((player.calcStateHeuristic(secondTestingState.upper_tokens, secondTestingState.lower_tokens), secondAction))
-        currentHeuristics.sort(key = lambda tup: tup[0])
-        allHeuristics.append((action,currentHeuristics[-1]))
-    allHeuristics.sort(key = lambda tup : tup[1][0])
-    print(allHeuristics[-1])
-    state = state.successor(allHeuristics[-1][0])
-    state.print()
-    return state
+#Code taken from https://www.youtube.com/watch?v=l-hh51ncgDI&ab_channel=SebastianLague
 
-def determineOptimalMove(state, depth, player, maximisingPlayer):
+def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
     _player = Player('u')
     allActions = list(state.actions())
     if(player == 0):
@@ -101,7 +71,7 @@ def determineOptimalMove(state, depth, player, maximisingPlayer):
     allLowerActions = list(dict.fromkeys(allLowerActions))
     heuristics = []
     
-    #Code taken from https://www.youtube.com/watch?v=l-hh51ncgDI&ab_channel=SebastianLague
+    
 
     if depth == 0:
         if(player==0):
@@ -115,20 +85,24 @@ def determineOptimalMove(state, depth, player, maximisingPlayer):
             for action in allUpActions:
                 transState = state.successor((action,dummy)) 
                 newState = State.new(transState.upper_tokens, state.lower_tokens, ALL_HEXES, transState.upper_throws, state.lower_throws)
-                eval = determineOptimalMove(newState, depth-1, player, False)
-                maxEval = max(maxEval, eval[1])
+                eval = determineOptimalMove(newState, depth-1, player+1, alpha, beta, False)
+                if(eval[1] > maxEval):
+                    maxEval = eval[1]
+                    maxAction = action
             #print("Max")
             #print(action, maxEval)
-            return (action, maxEval)
+            return (maxAction, maxEval)
         else:
             for action in allLowerActions:
                 transState = state.successor((dummy, action)) 
                 newState = State.new(state.upper_tokens, transState.lower_tokens, ALL_HEXES, state.upper_throws, transState.lower_throws)
-                eval = determineOptimalMove(newState, depth-1, player, False)
-                maxEval = max(maxEval, eval[1])
+                eval = determineOptimalMove(newState, depth-1, player-1, alpha, beta, False)
+                if(eval[1]>maxEval):
+                    maxEval = eval[1]
+                    maxAction = action
             #print("Max")
             #print(action, maxEval)
-            return (action, maxEval)
+            return (maxAction, maxEval)
     
     else:
         minEval = math.inf
@@ -136,70 +110,34 @@ def determineOptimalMove(state, depth, player, maximisingPlayer):
             for action in allUpActions:
                 transState = state.successor((action,dummy)) 
                 newState = State.new(transState.upper_tokens, state.lower_tokens, ALL_HEXES, transState.upper_throws, state.lower_throws)
-                eval = determineOptimalMove(newState, depth-1, player, True)
-                minEval = min(minEval, eval[1])
+                eval = determineOptimalMove(newState, depth-1, player+1, alpha, beta, True)
+                if(eval[1]<minEval):
+                    minEval = eval[1]
+                    minAction = action
             #print("Min")
             #print(action, minEval)
-            return (action, minEval)
+            return (minAction, minEval)
         if(player == 1):
             for action in allLowerActions:
                 transState = state.successor((dummy, action)) 
                 newState = State.new(state.upper_tokens, transState.lower_tokens, ALL_HEXES, state.upper_throws, transState.lower_throws)
-                eval = determineOptimalMove(newState, depth-1, player, True)
-                minEval = min(minEval, eval[1])
+                eval = determineOptimalMove(newState, depth-1, player-1, alpha, beta, True)
+                if(eval[1]<minEval):
+                    minEval = eval[1]
+                    minAction = action
             #print("Min")
             #print(action, minEval)
-            return (action, minEval)
+            return (minAction, minEval)
     
-    
-    
-    
-    """
-    if(turn == 0): 
-        if(layers == 0):
-            for action in allUpActions:
-                transState = state.successor((action,dummy)) 
-                newState = State.new(transState.upper_tokens, state.lower_tokens, ALL_HEXES, transState.upper_throws, state.lower_throws)
-                heuristics.append((action, player.calcStateHeuristic(newState.upper_tokens, newState.lower_tokens)))
-            heuristics.sort(key = lambda tup : tup[1], reverse = True) 
-            return heuristics[0]
-        else:
-            backTrackHeuristics = []
-            for action in allUpActions:
-                skip = 0
-                transState = state.successor((action, dummy))
-                newState = State.new(transState.upper_tokens, state.lower_tokens, ALL_HEXES, transState.upper_throws, state.lower_throws)
-                currentHeuristic = determineOptimalMove(newState, turn+1,layers-1)
-                backTrackHeuristics.append(determineOptimalMove(newState, turn+1,layers-1))
-            backTrackHeuristics.sort(key=lambda tup : tup[1], reverse = True)
-            return backTrackHeuristics[0]
-    if(turn == 1):
-        if(layers == 0):
-            for action in allLowerActions:
-                transState = state.successor((dummy, action)) 
-                newState = State.new(state.upper_tokens, transState.lower_tokens, ALL_HEXES, state.upper_throws, transState.lower_throws)
-                heuristics.append((action, player.calcStateHeuristic(newState.lower_tokens, newState.upper_tokens)))
-            heuristics.sort(key = lambda tup : tup[1], reverse = True) 
-            return heuristics[0]
-        backTrackHeuristics = []
-        for action in allLowerActions:
-            skip = 0
-            transState = state.successor((dummy,action))
-            newState = State.new(state.upper_tokens, transState.lower_tokens, ALL_HEXES, state.upper_throws, transState.lower_throws)
-            currentHeuristic = determineOptimalMove(newState, turn-1,layers-1)
-            backTrackHeuristics.append(determineOptimalMove(newState, turn-1,layers-1))
-        backTrackHeuristics.sort(key = lambda tup : tup[1], reverse = True)
-        return backTrackHeuristics[0]"""
-
     
         
 if __name__ == "__main__":
-    lower_tokens = (Token(Hex(0,1), 'r'),)
-    upper_tokens = (Token(Hex(2,1), 's'),)
+    lower_tokens = []
+    upper_tokens = []
     state = State.new(lower_tokens, upper_tokens, ALL_HEXES, 0, 0)
-    for i in range(5):
-        upperMove = determineOptimalMove(state, 2, 0, True)
-        lowerMove = determineOptimalMove(state, 2, 1, True)
+    for i in range(2):
+        upperMove = determineOptimalMove(state, 4, 0, True)
+        lowerMove = determineOptimalMove(state, 4, 1, True)
         print(upperMove[0])
         print(lowerMove[0])
         state = state.successor((upperMove[0],lowerMove[0]))
