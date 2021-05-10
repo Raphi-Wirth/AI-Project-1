@@ -5,10 +5,6 @@ import random
 class Player:
     thrown_tokens = 0
     tokens = []
-    offensiveHeuristicWeight = 1
-    defensiveHeuristicWeight = 1
-
-
     def __init__(self, player):
         """
         Called once at the beginning of a game to initialise this player.
@@ -116,7 +112,6 @@ def calcStateHeuristic(state, player, opponent):
     return evaluation * (-1 if opponent else 1)
     
 #Code taken from https://www.youtube.com/watch?v=l-hh51ncgDI&ab_channel=SebastianLague
-
 def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
     if(player == 'u'):
         allActions = state.genUpActions()
@@ -172,7 +167,3 @@ if __name__ == "__main__":
         print(lowerMove[0])
         state = state.successor((upperMove[0],lowerMove[0]))
         state.print()
-
-    
-
-
