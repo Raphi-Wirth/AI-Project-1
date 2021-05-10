@@ -28,7 +28,7 @@ class Player:
         of the game, select an action to play this turn.
         """
         # put your code here
-        a = determineOptimalMove(self.currentState, 4, self.player_type[0], -math.inf, math.inf, True)
+        a = determineOptimalMove(self.currentState, 2, self.player_type[0], -math.inf, math.inf, True)
         return a[0][1]
     
     def update(self, opponent_action, player_action):
@@ -104,75 +104,42 @@ def calcStateHeuristic(state, player, opponent):
 
 def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
     if(player == 'u'):
-        allUpActions = state.genUpActions()
-        random.shuffle(allUpActions)
+        allActions = state.genUpActions()
     else:
-        allLowerActions = state.genLowerActions()
-        random.shuffle(allLowerActions)
+        allActions = state.genLowerActions()
+    random.shuffle(allActions)
     
     heuristics = []
 
-    if depth == 0:
+    if depth == 0 or len(allActions) == 0:
         return ('do nothing', calcStateHeuristic(state, player, not maximisingPlayer))
     
     if maximisingPlayer:
         maxEval = -math.inf
-        if(player == 'u'):
-            for action in allUpActions:
-                transState = state.successor((action,)) 
-                eval = determineOptimalMove(transState, depth-1, 'l', alpha, beta, False)
-                if(eval[1] > maxEval):
-                    maxEval = eval[1]
-                    maxAction = action
-                alpha = max(alpha, eval[1])
-                if(beta <= alpha):
-                    break
-            #print("Max")
-            #print(action, maxEval)
-            return (maxAction, maxEval)
-        else:
-            for action in allLowerActions:
-                transState = state.successor((action,)) 
-                eval = determineOptimalMove(transState, depth-1, 'u', alpha, beta, False)
-                if(eval[1]>maxEval):
-                    maxEval = eval[1]
-                    maxAction = action
-                alpha = max(alpha, eval[1])
-                if(beta <= alpha):
-                    break
-            #print("Max")
-            #print(action, maxEval)
-            return (maxAction, maxEval)
-    
+        for action in allActions:
+            transState = state.successor((action,)) 
+            eval = determineOptimalMove(transState, depth-1, 'l' if player == 'u' else 'u', alpha, beta, False)
+            if(eval[1] > maxEval):
+                maxEval = eval[1]
+                maxAction = action
+            alpha = max(alpha, eval[1])
+            if(beta <= alpha):
+                break
+        return (maxAction, maxEval)    
     else:
         minEval = math.inf
-        if(player == 'u'):
-            for action in allUpActions:
-                transState = state.successor((action,)) 
-                eval = determineOptimalMove(transState, depth-1, 'l', alpha, beta, True)
-                if(eval[1]<minEval):
-                    minEval = eval[1]
-                    minAction = action
-                beta = min(beta, eval[1])
-                if(beta <= alpha):
-                    break
-            #print("Min")
-            #print(action, minEval)
-            return (minAction, minEval)
-        else:
-            for action in allLowerActions:
-                transState = state.successor((action,)) 
-                eval = determineOptimalMove(transState, depth-1, 'u', alpha, beta, True)
-                if(eval[1]<minEval):
-                    minEval = eval[1]
-                    minAction = action
-                beta = min(beta, eval[1])
-                if(beta <= alpha):
-                    break
-            #print("Min")
-            #print(action, minEval)
-            return (minAction, minEval)
-    
+        for action in allActions:
+            transState = state.successor((action,)) 
+            eval = determineOptimalMove(transState, depth-1, 'l' if player == 'u' else 'u', alpha, beta, True)
+            if(eval[1]<minEval):
+                minEval = eval[1]
+                minAction = action
+            beta = min(beta, eval[1])
+            if(beta <= alpha):
+                break
+        #print("Min")
+        #print(action, minEval)
+        return (minAction, minEval)
     
         
 if __name__ == "__main__":

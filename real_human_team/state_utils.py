@@ -105,7 +105,7 @@ class State(typing.NamedTuple):
         def _lower_throw_actions():
             if self.lower_throws >= 9:
                 return
-            for row in range(self.upper_throws+1):
+            for row in range(self.lower_throws+1):
                 if -4+row <= 0:
                     col_range = range(-row, 4+1)
                 else:
