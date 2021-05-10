@@ -4,8 +4,7 @@ import itertools
 import collections
 import numpy as np
 
-from util import print_board
-from gametheory import solve_game
+from real_human_team.util import print_board
 
 class State:
     # Note: By subclassing namedtuple, we get efficient, immutable instances
@@ -62,7 +61,91 @@ class State:
         for action in self.actions():
             yield action, self.successor(action)
 
+    # Generate list of upper actions
+    def genUpActions(self):
+        # Get upper tokens 
+        xs = [x for x, _s in self.upper_tokens]
+        xs_occupied_hexes = set(xs)
+
+        # Get adjacent hexes
+        def _adjacent(x):
+            return self.all_hexes & {x + y for y in HEX_STEPS}
+
+        # Generate throws
+        def _upper_throw_actions():
+            if self.upper_throws >= 9:
+                return
+            for row in range(self.upper_throws+1):
+                if 4-row >= 0:
+                    col_range = range(-4, row+1)
+                else:
+                    col_range = range(-8+row, 4+1)
+                for col in col_range:
+                    for symbol in ['r','p','s']:
+                        yield 'u', ('THROW', symbol, Hex(4-row, col))
+
+        # Generate slides and swings
+        def _upper_token_actions(x):
+            adjacent_x = _adjacent(x)
+            for y in adjacent_x:
+                yield 'u', ("SLIDE", x, y)
+                if y in xs_occupied_hexes:
+                    opposite_y = _adjacent(y) - adjacent_x - {x}
+                    for z in opposite_y:
+                        yield 'u', ("SWING", x, z)
+            adjacent_y = _adjacent(x)
+        
+        # Return upper actions
+        upper_maps = map(_upper_token_actions,xs)
+        upper_moves = list(_upper_throw_actions())
+        for gen in upper_maps:
+            upper_moves += [*gen]
+        return upper_moves
+
+    # Generate list of lower actions
+    def genLowerActions(self):
+        # Get lower tokens and occupied hexes
+        ys = [y for y, _s in self.lower_tokens]
+        ys_occupied_hexes = set(ys) 
+        
+        # Get adjacent hexes
+        def _adjacent(x):
+            return self.all_hexes & {x + y for y in HEX_STEPS}
+
+        # Generate THROW actions
+        def _lower_throw_actions():
+            if self.lower_throws >= 9:
+                return
+            for row in range(self.lower_throws+1):
+                if -4+row <= 0:
+                    col_range = range(-row, 4+1)
+                else:
+                    col_range = range(-4, 8-row+1)
+                for col in col_range:
+                    for symbol in ['r','p','s']:
+                        yield 'l', ('THROW', symbol, Hex(-4+row, col))
+
+        # Generate SLIDE, SWING actions
+        def _lower_token_actions(x):
+            adjacent_y = _adjacent(x)
+            for y in adjacent_y:
+                yield 'l', ("SLIDE", x, y)
+                if y in ys_occupied_hexes:
+                    opposite_y = _adjacent(y) - adjacent_y - {x}
+                    for z in opposite_y:
+                        yield 'l', ("SWING", x, z)
+            adjacent_y = _adjacent(x)
+        
+        # Return list of lower actions
+        lower_maps = map(_lower_token_actions, ys)
+        lower_moves = list(_lower_throw_actions())
+        for gen in lower_maps:
+            lower_moves += [*gen]
+        return lower_moves
+
+
     def actions(self):
+        print("WE FNIOWENFNIONG\nIONDFOEWINFWEIOGN\nWEFOIOINWERGH\nIOEFNOIGN")
         """
         Generate all available 'actions' (each 'action' is actually a
         collection of actions, one for each upper token).
