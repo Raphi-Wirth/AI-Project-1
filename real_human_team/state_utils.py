@@ -21,9 +21,6 @@ class State:
     # Hold information about how many times each player has thrown
     upper_throws: int
     lower_throws: int
-    # Information about how many actions one can take
-    upper_actions_count = 0
-    lower_actions_count = 0
     
     # When subclassing namedtuple, we should control creation of instances
     # using a separate classmethod, rather than overriding __init__.
@@ -142,94 +139,6 @@ class State:
         for gen in lower_maps:
             lower_moves += [*gen]
         return lower_moves
-
-
-    def actions(self):
-        print("WE FNIOWENFNIONG\nIONDFOEWINFWEIOGN\nWEFOIOINWERGH\nIOEFNOIGN")
-        """
-        Generate all available 'actions' (each 'action' is actually a
-        collection of actions, one for each upper token).
-        """
-        def _adjacent(x):
-            return self.all_hexes & {x + y for y in HEX_STEPS}
-
-        # Upper token actions
-        xs = [x for x, _s in self.upper_tokens]
-        xs_occupied_hexes = set(xs)
-        # Generate THROW actions
-        def _upper_throw_actions():
-            if self.upper_throws >= 9:
-                return
-            for row in range(self.upper_throws+1):
-                if 4-row >= 0:
-                    col_range = range(-4, row+1)
-                else:
-                    col_range = range(-8+row, 4+1)
-                for col in col_range:
-                    for symbol in ['r','p','s']:
-                        yield 'u', ('THROW', symbol, Hex(4-row, col))
-        # Generate SLIDE, SWING actions
-        def _upper_token_actions(x):
-            adjacent_x = _adjacent(x)
-            for y in adjacent_x:
-                yield 'u', ("SLIDE", x, y)
-                if y in xs_occupied_hexes:
-                    opposite_y = _adjacent(y) - adjacent_x - {x}
-                    for z in opposite_y:
-                        yield 'u', ("SWING", x, z)
-            adjacent_y = _adjacent(x)
-        
-        # Lower token actions
-        ys = [y for y, _s in self.lower_tokens]
-        ys_occupied_hexes = set(ys)
-        # Generate THROW actions
-        def _lower_throw_actions():
-            if self.lower_throws >= 9:
-                return
-            for row in range(self.upper_throws+1):
-                if -4+row <= 0:
-                    col_range = range(-row, 4+1)
-                else:
-                    col_range = range(-4, 8-row+1)
-                for col in col_range:
-                    for symbol in ['r','p','s']:
-                        yield 'l', ('THROW', symbol, Hex(-4+row, col))
-        # Generate SLIDE, SWING actions
-        def _lower_token_actions(x):
-            adjacent_y = _adjacent(x)
-            for y in adjacent_y:
-                yield 'l', ("SLIDE", x, y)
-                if y in ys_occupied_hexes:
-                    opposite_y = _adjacent(y) - adjacent_y - {x}
-                    for z in opposite_y:
-                        yield 'l', ("SWING", x, z)
-            adjacent_y = _adjacent(x)
-
-        # Pack all upper and lower moves into lists
-        upper_maps = map(_upper_token_actions,xs)
-        upper_moves = list(_upper_throw_actions())
-        for gen in upper_maps:
-            upper_moves += [*gen]
-
-        lower_maps = map(_lower_token_actions, ys)
-        lower_moves = list(_lower_throw_actions())
-        for gen in lower_maps:
-            lower_moves += [*gen]
-
-        for t, a in enumerate(itertools.product(
-                                    upper_moves,
-                                    lower_moves
-                              )):
-            #print(t, a)
-            pass
-
-        self.upper_actions_count = len(upper_moves)
-        self.lower_actions_count = len(lower_moves)
-
-        return itertools.product(
-                upper_moves,
-                lower_moves
-            )
     
     def successor(self, action):
         # move upper and lower tokens
@@ -286,35 +195,6 @@ class State:
             safe_lower_tokens.extend(los_at_x)
         return self.new(safe_upper_tokens, safe_lower_tokens, self.all_hexes, 
                         new_upper_throws, new_lower_throws)
-    
-    # Generate payoff matrix of this state
-    def payoff_matrix(self):
-        act_suc = [(action, successor) for action, successor in self.actions_successors()]
-        row_index = {}
-        col_index = {}
-        row_count = 0
-        col_count = 0
-        matrix = [[0]*self.lower_actions_count]*self.upper_actions_count
-        for action, successor in act_suc:
-            row = 0
-            col = 0
-            for p, act in action:
-                if p == 'u':
-                    upper_action = act
-                if p == 'l':
-                    lower_action = act
-            if upper_action in row_index.keys():
-                row = row_index[upper_action]
-            else:
-                row_index[upper_action] = row_count
-                row_count+=1
-            if lower_action in col_index.keys():
-                col = col_index[lower_action]
-            else:
-                col_index[lower_action] = col_count
-                col_count+=1
-            matrix[row][col] = heuristic(self)
-        return matrix
 
     # For easier debugging, a helper method to print the current state.
     def print(self, message="", **kwargs):
@@ -365,17 +245,3 @@ WHAT_BEATS = {'r': 'p', 'p': 's', 's': 'r'}
 class Token(typing.NamedTuple):
     hex:    Hex
     symbol: str
-
-def heuristic(state):
-    return 12
-
-def min_ev(state):
-    return solve_game(np.array(state.payoff_matrix()))[1]
-
-if __name__ == "__main__":
-    lower_tokens = (Token(Hex(0,1), 'r'),)
-    upper_tokens = (Token(Hex(2,1), 'R'),Token(Hex(3,1), 'R'),)
-    state = State.new([], upper_tokens, ALL_HEXES, 0, 0)
-    #print(state.payoff_matrix())
-    print(min_ev(state))
-    print('done')

@@ -3,47 +3,28 @@ import math
 import random
 
 class Player:
-    thrown_tokens = 0
-    tokens = []
     def __init__(self, player):
-        """
-        Called once at the beginning of a game to initialise this player.
-        Set up an internal representation of the game state.
-
-        The parameter player is the string "upper" (if the instance will
-        play as Upper), or the string "lower" (if the instance will play
-        as Lower).
-        """
-        # put your code here
+        # Init player
         self.player_type = player
         self.currentState = State.new([],[],ALL_HEXES,0,0)
 
     def action(self):
-        """
-        Called at the beginning of each turn. Based on the current state
-        of the game, select an action to play this turn.
-        """
+        # Determine the optimal move using minimax
         a = determineOptimalMove(self.currentState, 2, self.player_type[0], -math.inf, math.inf, True)
         return a[0][1]
     
     def update(self, opponent_action, player_action):
-        """
-        Called at the end of each turn to inform this player of both
-        players' chosen actions. Update your internal representation
-        of the game state.
-        The parameter opponent_action is the opponent's chosen action,
-        and player_action is this instance's latest chosen action.
-        """
-        # put your code here
+        # Get action in format that successor() can take
         action = (('u', player_action), ('l', opponent_action)) if self.player_type[0] == 'u' \
             else (('u', opponent_action), ('l', player_action))
 
+        # Update state of board
         self.currentState = self.currentState.successor(action)
 
 
 # Calculate evaluation function (moved outside of player class)
 def calcStateHeuristic(state, player, opponent):
-    # define hex weights
+    # Define hex weights
     hexWeights = [((0,0), 40), ((0, -1), 40), ((0, 1), 40),
                     ((0, 2), 30), ((0, -2), 30),
                     ((0, 3), 25), ((0, -3), 25), ((0, 4), 20),
