@@ -27,7 +27,6 @@ class Player:
         Called at the beginning of each turn. Based on the current state
         of the game, select an action to play this turn.
         """
-        # put your code here
         a = determineOptimalMove(self.currentState, 2, self.player_type[0], -math.inf, math.inf, True)
         return a[0][1]
     
@@ -49,7 +48,7 @@ class Player:
 # Calculate evaluation function (moved outside of player class)
 def calcStateHeuristic(state, player, opponent):
     # define hex weights
-    hexWeights = [((0,0), 50), ((0, -1), 40), ((0, 1), 40),
+    hexWeights = [((0,0), 40), ((0, -1), 40), ((0, 1), 40),
                     ((0, 2), 30), ((0, -2), 30),
                     ((0, 3), 25), ((0, -3), 25), ((0, 4), 20),
                     ((0, -4), 20), ((-1, 0), 40), ((-1, 1), 40),
@@ -74,30 +73,46 @@ def calcStateHeuristic(state, player, opponent):
     # loop through upper and lower tokens  (upper tokens positive, lower negative)
     evaluation = 0
     if player == 'u':
+        xs = [x for x, _s in state.upper_tokens]
+        xs_occupied_hexes = set(xs)
+        evaluation += (len(xs_occupied_hexes)-len(state.upper_tokens)) * 10.0
         for upper in state.upper_tokens:
             # look up token in weights
             for h, weight in hexWeights:
                 if upper.hex == h:
+                    if upper.hex.r < -4+state.lower_throws and state.lower_throws < 9:
+                        evaluation-=10
                     evaluation += weight
+                    break
             for lower in state.lower_tokens:
                if WHAT_BEATS[upper.symbol] == lower.symbol:
                    # look up token in weights
                     for h, weight in hexWeights:
                         if lower.hex == h:
                             evaluation -= weight
+                            break
+                    break
             
     if player == 'l':
+        ys = [y for y, _s in state.lower_tokens]
+        ys_occupied_hexes = set(ys) 
+        evaluation += (len(ys_occupied_hexes)-len(state.lower_tokens)) * 10.0
         for lower in state.lower_tokens:
             # look up token in weights
             for h, weight in hexWeights:
                 if lower.hex == h:
                     evaluation += weight
+                    if lower.hex.r > 4-state.upper_throws:
+                        evaluation-=10
+                    break
             for upper in state.upper_tokens:
                if WHAT_BEATS[lower.symbol] == upper.symbol:
                    # look up token in weights
                     for h, weight in hexWeights:
                         if upper.hex == h:
                             evaluation -= weight
+                            break
+                    break
     return evaluation * (-1 if opponent else 1)
     
 #Code taken from https://www.youtube.com/watch?v=l-hh51ncgDI&ab_channel=SebastianLague
@@ -122,6 +137,9 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
             if(eval[1] > maxEval):
                 maxEval = eval[1]
                 maxAction = action
+            elif eval[1] == maxEval:
+                if random.uniform(0,1) < 0.5:
+                    maxAction = action
             alpha = max(alpha, eval[1])
             if(beta <= alpha):
                 break
@@ -134,11 +152,12 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
             if(eval[1]<minEval):
                 minEval = eval[1]
                 minAction = action
+            elif eval[1] == minEval:
+                if random.uniform(0,1) < 0.5:
+                    minAction = action
             beta = min(beta, eval[1])
             if(beta <= alpha):
                 break
-        #print("Min")
-        #print(action, minEval)
         return (minAction, minEval)
     
         
