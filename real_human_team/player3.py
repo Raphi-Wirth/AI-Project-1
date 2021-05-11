@@ -1,5 +1,5 @@
-# This player punishs=es for entering THROW zone
-# Punishes overlapping tokens
+# This player does not punish for entering THROW zone
+# Does not punish overlapping tokens
 # Punishes tokens that are beaten
 # Uses archery-target like weights
 
@@ -7,7 +7,7 @@ from real_human_team.state_utils import *
 import math
 import random
 
-class Player:
+class Player3:
     def __init__(self, player):
         # Init player
         self.player_type = player
@@ -59,19 +59,11 @@ def calcStateHeuristic(state, player, opponent):
     # loop through upper and lower tokens  (upper tokens positive, lower negative)
     evaluation = 0
     if player == 'u':
-        # Punish upper for overlapping tokens
-        xs = [x for x, _s in state.upper_tokens]
-        xs_occupied_hexes = set(xs)
-        evaluation += (len(xs_occupied_hexes)-len(state.upper_tokens)) * OVERLAP_WEIGHT
-
         # Add up weights for all upper tokens
         for upper in state.upper_tokens:
             # look up token in weights
             for h, weight in hexWeights:
                 if upper.hex == h:
-                    # Punish tokens for going in opposing throw zone
-                    if upper.hex.r < -4+state.lower_throws and state.lower_throws < 9:
-                        evaluation -= THROW_ZONE_WEIGHT
                     evaluation += weight
                     break
 
@@ -87,20 +79,12 @@ def calcStateHeuristic(state, player, opponent):
                     break
             
     if player == 'l':
-        # Punish lower for overlapping tokens
-        ys = [y for y, _s in state.lower_tokens]
-        ys_occupied_hexes = set(ys) 
-        evaluation += (len(ys_occupied_hexes)-len(state.lower_tokens)) * OVERLAP_WEIGHT
-
         # Add up weights for all lower tokens
         for lower in state.lower_tokens:
             # look up token in weights
             for h, weight in hexWeights:
                 if lower.hex == h:
                     evaluation += weight
-                    # Punish tokens for going in opposing throw zone
-                    if lower.hex.r > 4-state.upper_throws and state.upper_throws < 9:
-                        evaluation -= THROW_ZONE_WEIGHT
                     break
         
         # Subtract weights if upper token beats lower token

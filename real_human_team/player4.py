@@ -1,13 +1,13 @@
-# This player punishs=es for entering THROW zone
+# This player punishes for entering THROW zone
 # Punishes overlapping tokens
 # Punishes tokens that are beaten
-# Uses archery-target like weights
+# Uses archery-target like weights (lesser than normal)
 
 from real_human_team.state_utils import *
 import math
 import random
 
-class Player:
+class Player4:
     def __init__(self, player):
         # Init player
         self.player_type = player
@@ -30,10 +30,10 @@ class Player:
 # Calculate evaluation function (moved outside of player class)
 def calcStateHeuristic(state, player, opponent):
     # Define hex weights
-    hexWeights = [((0,0), 40), ((0, -1), 40), ((0, 1), 40),
+    hexWeights = [((0,0), 30), ((0, -1), 30), ((0, 1), 30),
                     ((0, 2), 30), ((0, -2), 30),
                     ((0, 3), 25), ((0, -3), 25), ((0, 4), 20),
-                    ((0, -4), 20), ((-1, 0), 40), ((-1, 1), 40),
+                    ((0, -4), 20), ((-1, 0), 30), ((-1, 1), 30),
                     ((-1, -1), 30), ((-1, -2), 25), ((-1, 2), 30),
                     ((-1, 3), 25), ((-1, -3), 20),
                     ((-1, 4), 10), ((-2, 0), 30), ((-2, 1), 30),
@@ -42,7 +42,7 @@ def calcStateHeuristic(state, player, opponent):
                     ((-3, 1), 25), ((-3, 2), 25), ((-3, 3), 25),
                     ((-3, -1), 20), ((-3, 4), 20), ((-4, 0), 20),
                     ((-4, 1), 20), ((-4, 2), 20), ((-4, 3), 20), 
-                    ((-4, 4), 20), ((1, -1), 40), ((1, 0), 40),
+                    ((-4, 4), 20), ((1, -1), 30), ((1, 0), 30),
                     ((1, -2), 30), ((1, 1), 30), ((1, -3), 25),
                     ((1, 2), 25), ((1, 4), -20), ((1, 3), 20),
                     ((2, 0), 30), ((2, -1), 30), ((2, -2), 30),
