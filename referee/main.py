@@ -26,7 +26,7 @@ def main():
     draws = 0
 
     try:
-        for i in range(50):
+        for i in range(options.games):
             # Import player classes
             p1 = PlayerWrapper(
                 "player 1",
