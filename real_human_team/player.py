@@ -47,23 +47,34 @@ def calcStateHeuristic(state, player, opponent):
                     ((3, 1), 20), ((4, 0), 20), ((4, -1), 20),
                     ((4, -2), 20), ((4, -3), 20), ((4, -4), 20)]
 
+    # Specific weights we can tune
+    OVERLAP_WEIGHT = 10.0
+    THROW_ZONE_WEIGHT = 10.0
+
     # loop through upper and lower tokens  (upper tokens positive, lower negative)
     evaluation = 0
     if player == 'u':
+        # Punish upper for overlapping tokens
         xs = [x for x, _s in state.upper_tokens]
         xs_occupied_hexes = set(xs)
-        evaluation += (len(xs_occupied_hexes)-len(state.upper_tokens)) * 10.0
+        evaluation += (len(xs_occupied_hexes)-len(state.upper_tokens)) * OVERLAP_WEIGHT
+
+        # Add up weights for all upper tokens
         for upper in state.upper_tokens:
             # look up token in weights
             for h, weight in hexWeights:
                 if upper.hex == h:
+                    # Punish tokens for going in opposing throw zone
                     if upper.hex.r < -4+state.lower_throws and state.lower_throws < 9:
-                        evaluation-=10
+                        evaluation -= THROW_ZONE_WEIGHT
                     evaluation += weight
                     break
-            for lower in state.lower_tokens:
-               if WHAT_BEATS[upper.symbol] == lower.symbol:
-                   # look up token in weights
+
+        # Subtract weights if lower token beats upper token
+        for lower in state.lower_tokens:
+            for upper in state.upper_tokens:
+                if WHAT_BEATS[upper.symbol] == lower.symbol:
+                    # look up token in weights
                     for h, weight in hexWeights:
                         if lower.hex == h:
                             evaluation -= weight
@@ -71,25 +82,34 @@ def calcStateHeuristic(state, player, opponent):
                     break
             
     if player == 'l':
+        # Punish lower for overlapping tokens
         ys = [y for y, _s in state.lower_tokens]
         ys_occupied_hexes = set(ys) 
-        evaluation += (len(ys_occupied_hexes)-len(state.lower_tokens)) * 10.0
+        evaluation += (len(ys_occupied_hexes)-len(state.lower_tokens)) * OVERLAP_WEIGHT
+
+        # Add up weights for all lower tokens
         for lower in state.lower_tokens:
             # look up token in weights
             for h, weight in hexWeights:
                 if lower.hex == h:
                     evaluation += weight
-                    if lower.hex.r > 4-state.upper_throws:
-                        evaluation-=10
+                    # Punish tokens for going in opposing throw zone
+                    if lower.hex.r > 4-state.upper_throws and state.upper_throws < 9:
+                        evaluation -= THROW_ZONE_WEIGHT
                     break
-            for upper in state.upper_tokens:
-               if WHAT_BEATS[lower.symbol] == upper.symbol:
-                   # look up token in weights
+        
+        # Subtract weights if upper token beats lower token
+        for upper in state.upper_tokens:
+            for lower in state.lower_tokens:
+                if WHAT_BEATS[lower.symbol] == upper.symbol:
+                    # look up token in weights
                     for h, weight in hexWeights:
                         if upper.hex == h:
                             evaluation -= weight
                             break
                     break
+
+    # Flip evaluation function if we are minimising (if we are an opponent)
     return evaluation * (-1 if opponent else 1)
     
 #Code taken from https://www.youtube.com/watch?v=l-hh51ncgDI&ab_channel=SebastianLague
