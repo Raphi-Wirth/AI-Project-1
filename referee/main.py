@@ -9,7 +9,6 @@ from referee.player import PlayerWrapper
 from referee.player import ResourceLimitException, set_space_line
 from referee.options import get_options
 
-
 def main():
     # Parse command-line options into a namespace for use throughout this
     # program
@@ -22,43 +21,61 @@ def main():
     comment("(any other lines of output must be from your Player class).")
     comment()
 
+    lower_wins = 0
+    upper_wins = 0
+    draws = 0
+
     try:
-        # Import player classes
-        p1 = PlayerWrapper(
-            "player 1",
-            options.player1_loc,
-            time_limit=options.time,
-            space_limit=options.space,
-        )
-        p2 = PlayerWrapper(
-            "player 2",
-            options.player2_loc,
-            time_limit=options.time,
-            space_limit=options.space,
-        )
+        for i in range(options.games):
+            # Import player classes
+            p1 = PlayerWrapper(
+                "player 1",
+                options.player1_loc,
+                time_limit=options.time,
+                space_limit=options.space,
+            )
+            p2 = PlayerWrapper(
+                "player 2",
+                options.player2_loc,
+                time_limit=options.time,
+                space_limit=options.space,
+            )
 
-        # We'll start measuring space usage from now, after all
-        # library imports should be finished:
-        set_space_line()
+            # We'll start measuring space usage from now, after all
+            # library imports should be finished:
+            set_space_line()
 
-        # Play the game!
-        result = play(
-            [p1, p2],
-            delay=options.delay,
-            print_state=(options.verbosity > 1),
-            use_debugboard=(options.verbosity > 2),
-            use_colour=options.use_colour,
-            use_unicode=options.use_unicode,
-            log_filename=options.logfile,
-        )
-        # Display the final result of the game to the user.
-        comment("game over!", depth=-1)
-        print(result)
+            # Play the game!
+            result = play(
+                [p1, p2],
+                delay=options.delay,
+                print_state=(options.verbosity > 1),
+                use_debugboard=(options.verbosity > 2),
+                use_colour=options.use_colour,
+                use_unicode=options.use_unicode,
+                log_filename=options.logfile,
+            )
+            # Display the final result of the game to the user.
+            comment("game over!", depth=-1)
+            print(result)
+            if result[8:] == 'lower':
+                lower_wins+=1
+            elif result[8:] == 'upper':
+                upper_wins+=1
+            else:
+                draws+=1
+        print('upper wins: ' + str(upper_wins))
+        print('lower wins: ' + str(lower_wins))
+        print('draws: ' + str(draws))
+
 
     # In case the game ends in an abnormal way, print a clean error
     # message for the user (rather than a trace).
     except KeyboardInterrupt:
         _print()  # (end the line)
+        print('upper wins: ' + str(upper_wins))
+        print('lower wins: ' + str(lower_wins))
+        print('draws: ' + str(draws))
         comment("bye!")
     except IllegalActionException as e:
         comment("game error!", depth=-1)

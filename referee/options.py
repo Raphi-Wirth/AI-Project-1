@@ -172,6 +172,17 @@ def get_options():
     )
 
     optionals.add_argument(
+        '-g',
+        '--games',
+        metavar="games",
+        type=int,
+        nargs="?",
+        default=1,  # if the flag is not present
+        const=1,  # if the flag is present with no value
+        help="how many games should be played by the referee",
+    )
+
+    optionals.add_argument(
         "-s",
         "--space",
         metavar="space_limit",
