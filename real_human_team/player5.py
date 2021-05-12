@@ -2,13 +2,13 @@
 # Punishes overlapping tokens
 # Punishes tokens that are beaten
 # Uses archery-target like weights
-# CACHE 
+# no CACHE
 
 from real_human_team.state_utils import *
 import math
 import random
 
-class Player:
+class Player5:
     def __init__(self, player):
         # Init player
         self.player_type = player
@@ -65,6 +65,9 @@ def calcStateHeuristic(state, player, opponent):
         xs_occupied_hexes = set(xs)
         evaluation += (len(xs_occupied_hexes)-len(state.upper_tokens)) * OVERLAP_WEIGHT
 
+        # Punish for having less tokens than thrown
+        evaluation += (len(state.upper_tokens) - state.upper_throws) * 20
+
         # Add up weights for all upper tokens
         for upper in state.upper_tokens:
             # look up token in weights
@@ -93,6 +96,9 @@ def calcStateHeuristic(state, player, opponent):
         ys_occupied_hexes = set(ys) 
         evaluation += (len(ys_occupied_hexes)-len(state.lower_tokens)) * OVERLAP_WEIGHT
 
+        # Punish for having less tokens than thrown
+        evaluation += (len(state.lower_tokens) - state.lower_throws) * 20
+
         # Add up weights for all lower tokens
         for lower in state.lower_tokens:
             # look up token in weights
@@ -117,47 +123,15 @@ def calcStateHeuristic(state, player, opponent):
 
     # Flip evaluation function if we are minimising (if we are an opponent)
     return evaluation * (-1 if opponent else 1)
-
-def sort_actions_key(state, action, player, maximisingPlayer, cache):
-    new_state = state.successor((action,))
-    cache[action] = new_state
-    #value = calcStateHeuristic(new_state, player, not maximisingPlayer) 
-    if player == 'u':
-        value = len(new_state.upper_tokens) - len(new_state.lower_tokens)
-    else:
-        value = len(new_state.lower_tokens) - len(new_state.upper_tokens)
-    return value
     
 #Code taken from https://www.youtube.com/watch?v=l-hh51ncgDI&ab_channel=SebastianLague
-global_cache = {}
 def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
     # Get actions
     if(player == 'u'):
         allActions = state.genUpActions()
     else:
         allActions = state.genLowerActions()
-
-    # Cache actions and their successors
-    cache = {}
-
     random.shuffle(allActions)
-    # allActions.sort(
-    #     key=lambda x: sort_actions_key(state, x, player, maximisingPlayer, cache), 
-    #     reverse=False 
-    # )
-
-    # Order actions
-    # sortedActions = sorted(
-    #     allActions, 
-    #     key=lambda x: sort_actions_key(state, x, player, maximisingPlayer, cache), 
-    #     reverse=True 
-    # )
-    #print([calcStateHeuristic(state.successor((action,)), player, not maximisingPlayer) for action in sortedActions])
-    #sortedActions = allActions
-    #random.shuffle(sortedActions)
-
-    #random.shuffle(allActions)
-    #allActions = sortedActions
     
     heuristics = []
 
@@ -165,20 +139,13 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
     #     print(key, val)
 
     if depth == 0 or len(allActions) == 0:
-        if((state.generate_string(), depth) in global_cache):
-            return global_cache[(state.generate_string(), depth)]
-        global_cache[(state.generate_string(), depth)] = ('',calcStateHeuristic(state, player, not maximisingPlayer))
-        return global_cache[(state.generate_string(), depth)]
+        return ('',calcStateHeuristic(state, player, not maximisingPlayer))
     
     if maximisingPlayer:
         maxEval = -math.inf
         for action in allActions:
             transState = state.successor((action,))
-            #transState = cache[action]
-            if (transState.generate_string(), depth-1) in global_cache:
-                eval = global_cache[(transState.generate_string(), depth-1)][1]
-            else:
-                eval = determineOptimalMove(transState, depth-1, 'l' if player == 'u' else 'u', alpha, beta, False)[1]
+            eval = determineOptimalMove(transState, depth-1, 'l' if player == 'u' else 'u', alpha, beta, False)[1]
             if(eval > maxEval):
                 maxEval = eval
                 maxAction = action
@@ -188,17 +155,12 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
             alpha = max(alpha, eval)
             if(beta <= alpha):
                 break
-        global_cache[(state.generate_string(), depth)] = (maxAction,maxEval)
         return (maxAction, maxEval)    
     else:
         minEval = math.inf
         for action in allActions:
             transState = state.successor((action,))
-            #transState = cache[action]
-            if (transState.generate_string(), depth-1) in global_cache:
-                eval = global_cache[(transState.generate_string(), depth-1)][1]
-            else:
-                eval = determineOptimalMove(transState, depth-1, 'l' if player == 'u' else 'u', alpha, beta, True)[1]
+            eval = determineOptimalMove(transState, depth-1, 'l' if player == 'u' else 'u', alpha, beta, True)[1]
             if(eval<minEval):
                 minEval = eval
                 minAction = action
@@ -208,7 +170,6 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
             beta = min(beta, eval)
             if(beta <= alpha):
                 break
-        global_cache[(state.generate_string(), depth)] = (minAction,minEval)
         return (minAction, minEval)
     
         

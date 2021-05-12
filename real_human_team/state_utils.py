@@ -2,7 +2,6 @@ import json
 import typing
 import itertools
 import collections
-import numpy as np
 
 from real_human_team.util import print_board
 
@@ -206,6 +205,14 @@ class State:
         for x, s in board.items():
             board[x] = f"({s})"
         print_board(board, message, **kwargs)
+    
+    def generate_string(self):
+        board_string = ''
+        for t in self.upper_tokens:
+            board_string += str(t)
+        for t in self.lower_tokens:
+            board_string += str(t)
+        return board_string
 
 
 # (Some classes and constants supporting the implementation above)
