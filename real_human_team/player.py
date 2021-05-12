@@ -79,7 +79,7 @@ def calcStateHeuristic(state, player, opponent):
             for h, weight in hexWeights:
                 if lower.hex == h:
                     evaluation += weight
-                    if lower.hex.r > 4-state.upper_throws:
+                    if lower.hex.r > 4-state.upper_throws and state.upper_throws < 9:
                         evaluation-=10
                     break
             for upper in state.upper_tokens:
@@ -95,7 +95,11 @@ def calcStateHeuristic(state, player, opponent):
 def sort_actions_key(state, action, player, maximisingPlayer, cache):
     new_state = state.successor((action,))
     cache[action] = new_state
-    value = calcStateHeuristic(new_state, player, not maximisingPlayer) 
+    #value = calcStateHeuristic(new_state, player, not maximisingPlayer) 
+    if player == 'u':
+        value = len(new_state.upper_tokens) - len(new_state.lower_tokens)
+    else:
+        value = len(new_state.lower_tokens) - len(new_state.upper_tokens)
     return value
     
 #Code taken from https://www.youtube.com/watch?v=l-hh51ncgDI&ab_channel=SebastianLague
@@ -110,10 +114,10 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
     # Cache actions and their successors
     cache = {}
 
-    #random.shuffle(allActions)
+    random.shuffle(allActions)
     allActions.sort(
         key=lambda x: sort_actions_key(state, x, player, maximisingPlayer, cache), 
-        reverse=maximisingPlayer 
+        reverse=False 
     )
 
     # Order actions
@@ -157,7 +161,6 @@ def determineOptimalMove(state, depth, player, alpha, beta, maximisingPlayer):
             #         maxAction = action
             alpha = max(alpha, eval)
             if(beta <= alpha):
-                print("pruneboi")
                 break
         global_cache[(state.generate_string(), depth)] = (maxAction,maxEval)
         return (maxAction, maxEval)    
