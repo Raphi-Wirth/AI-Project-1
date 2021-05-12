@@ -2,7 +2,6 @@ import json
 import typing
 import itertools
 import collections
-import numpy as np
 
 from real_human_team.util import print_board
 
